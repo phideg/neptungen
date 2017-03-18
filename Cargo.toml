@@ -1,0 +1,19 @@
+[package]
+name = "neptungen"
+version = "0.1.0"
+authors = ["Philipp Degler <deglerp@googlemail.com>"]
+
+[[bin]]
+name = "neptungen"
+
+[dependencies]
+serde = "0.9"
+serde_derive = "0.9"
+toml = "0.3"
+clap = "2.20"
+walkdir = "1"
+pulldown-cmark = "0.0.8"
+liquid = "0.9"
+image = "*"
+ftp = "*"
+checksums = "0.5"
