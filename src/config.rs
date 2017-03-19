@@ -59,13 +59,13 @@ impl Config {
             for copy_dir in self.copy_dirs.as_ref().unwrap() {
                 let path = base_path.join(copy_dir.as_str());
                 if !path.exists() {
-                    panic!("The template directory '{}' does not exist in your project '{}'",
+                    panic!("The directory '{}' does not exist in your project '{}'",
                            copy_dir.as_str(),
                            base_path.display());
                 }
                 new_copy_dirs.push(path.as_path()
                     .to_str()
-                    .expect("Could not resolve path to template directory")
+                    .expect("Could not resolve path to copy directory")
                     .to_owned());
             }
             self.copy_dirs = Some(new_copy_dirs);
