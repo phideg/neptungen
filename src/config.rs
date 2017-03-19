@@ -2,11 +2,11 @@ use std::path::Path;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub title: String,
+    pub title: Option<String>,
     pub template_dir: Option<String>,
     pub output_dir: Option<String>,
     pub copy_dirs: Option<Vec<String>>,
-    pub gallery: Gallery,
+    pub gallery: Option<Gallery>,
     pub sync_settings: Option<SyncSettings>,
 }
 
@@ -34,6 +34,14 @@ impl Config {
             .to_str()
             .expect("Could not resolve path to template directory")
             .to_owned());
+        if !self.gallery.is_some() {
+            self.gallery = Some(Gallery {
+                img_width: 600,
+                img_height: 800,
+                thumb_width: 90,
+                thumb_height: 90,
+            })
+        }
         if self.template_dir.is_some() {
             let template_path = base_path.join(&self.template_dir.as_ref().unwrap().as_str());
             if !template_path.exists() {
@@ -65,7 +73,7 @@ impl Config {
     }
 
     pub fn print(&self) {
-        println!("Title : {}", self.title);
+        println!("Title : {:?}", self.title);
         println!("Template directory : {:?}", self.template_dir);
         println!("Output directory : {:?}", self.output_dir);
         println!("SyncSettings");
@@ -77,12 +85,15 @@ impl Config {
             println!("FTP overwrite: {:?}",
                      sync_settings.ftp_overwrite.unwrap_or(false));
         }
-        println!("Gallery");
-        println!("  image size : {} x {}",
-                 self.gallery.img_width,
-                 self.gallery.img_height);
-        println!("  thumb size : {} x {}",
-                 self.gallery.thumb_width,
-                 self.gallery.thumb_height);
+        if self.gallery.is_some() {
+            let gallery = self.gallery.as_ref().unwrap();
+            println!("Gallery");
+            println!("  image size : {} x {}",
+                     gallery.img_width,
+                     gallery.img_height);
+            println!("  thumb size : {} x {}",
+                     gallery.thumb_width,
+                     gallery.thumb_height);
+        }
     }
 }

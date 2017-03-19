@@ -166,10 +166,11 @@ fn prepare_gallery(source_entry: &DirEntry, target_path: PathBuf, conf: &Config)
         image_path.set_extension("png");
         rel_image_path.push(entry.file_name());
         rel_image_path.set_extension("png");
+        let gallery_settings = conf.gallery.as_ref().unwrap();
         if !image_path.exists() {
             let ref mut fout = File::create(&image_path).unwrap();
-            img = img.resize(conf.gallery.img_width,
-                             conf.gallery.img_height,
+            img = img.resize(gallery_settings.img_width,
+                             gallery_settings.img_height,
                              image::FilterType::Nearest);
             img.save(fout, image::PNG)
                 .expect(format!("Saving thumb image '{}' failed", image_path.display()).as_ref());
@@ -184,8 +185,8 @@ fn prepare_gallery(source_entry: &DirEntry, target_path: PathBuf, conf: &Config)
         rel_thumb_path.push(thumb_file_name);
         if !thumb_path.exists() {
             let ref mut fout = File::create(&thumb_path).unwrap();
-            img = img.resize(conf.gallery.thumb_width,
-                             conf.gallery.thumb_height,
+            img = img.resize(gallery_settings.thumb_width,
+                             gallery_settings.thumb_height,
                              image::FilterType::Nearest);
             img.save(fout, image::PNG)
                 .expect(format!("Saving thumb image '{}' failed", thumb_path.display()).as_ref());
@@ -216,7 +217,12 @@ fn apply_gallery_template(content: String,
     }
     let mut context = Context::new();
     context.set_val("root_dir", Value::Str(root_dir));
-    context.set_val("title", Value::Str(conf.title.clone()));
+    context.set_val("title",
+                    Value::Str(if conf.title.is_some() {
+                        conf.title.as_ref().unwrap().clone()
+                    } else {
+                        "None".to_string()
+                    }));
     context.set_val("nav_items", Value::Array(nav_items));
     context.set_val("content", Value::Str(content.to_owned()));
     context.set_val("images", Value::Array(images));
@@ -246,7 +252,12 @@ fn apply_page_template(content: String,
     }
     let mut context = Context::new();
     context.set_val("root_dir", Value::Str(root_dir));
-    context.set_val("title", Value::Str(conf.title.clone()));
+    context.set_val("title",
+                    Value::Str(if conf.title.is_some() {
+                        conf.title.as_ref().unwrap().clone()
+                    } else {
+                        "None".to_string()
+                    }));
     context.set_val("nav_items", Value::Array(nav_items));
     context.set_val("content", Value::Str(content.to_owned()));
     match template.render(&mut context) {
