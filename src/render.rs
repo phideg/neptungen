@@ -12,6 +12,7 @@ use config::Config;
 use pulldown_cmark::{Parser, html, Options};
 use template;
 use image;
+use errors::*;
 use filter::{is_markdown, is_hidden, is_directory, is_image, contains_markdown_file,
              contains_markdown_subdir};
 
@@ -32,7 +33,7 @@ impl fmt::Display for MenuCmd {
 }
 
 
-pub fn build(path: &Path, conf: &Config) {
+pub fn build(path: &Path, conf: &Config) -> Result<()> {
     let walker = WalkDir::new(path).min_depth(1).into_iter();
     let path_comps = path.components().collect::<Vec<_>>();
     let output_dir = PathBuf::from(conf.output_dir.as_ref().unwrap());
@@ -57,6 +58,7 @@ pub fn build(path: &Path, conf: &Config) {
         copy_images(entry.path().parent().unwrap(), target_dir.as_path());
     }
     copy_dirs(path, output_dir.as_path(), conf);
+    Ok(())
 }
 
 fn copy_dirs(path: &Path, target_path: &Path, conf: &Config) {

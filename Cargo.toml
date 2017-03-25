@@ -7,6 +7,7 @@ authors = ["Philipp Degler <deglerp@googlemail.com>"]
 name = "neptungen"
 
 [dependencies]
+error-chain = "0.10"
 serde = "0.9"
 serde_derive = "0.9"
 toml = "0.3"
@@ -17,3 +18,4 @@ liquid = "0.9"
 image = "*"
 ftp = "*"
 checksums = "0.5"
+term-painter = "0.2"

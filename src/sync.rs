@@ -168,7 +168,7 @@ impl<'a> Synchronizer<'a> {
         let _ = self.push_file(crc_file_path.as_path());
     }
 
-    fn push_all_files(&mut self) {
+    pub fn push_all_files(&mut self) {
         println!("Push all files to FTP server {}",
                  self.conf.sync_settings.as_ref().unwrap().ftp_server.as_str());
         let walker = WalkDir::new(self.output_path.as_path())

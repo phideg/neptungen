@@ -1,4 +1,6 @@
 #[macro_use]
+extern crate error_chain;
+#[macro_use]
 extern crate serde_derive;
 extern crate toml;
 extern crate clap;
@@ -8,19 +10,38 @@ extern crate liquid;
 extern crate image;
 extern crate ftp;
 extern crate checksums;
+extern crate term_painter;
 
 mod config;
 mod render;
 mod template;
 mod sync;
 mod filter;
+mod errors;
 
 use std::fs;
-use std::fs::File;
-use std::io::prelude::*;
+use std::path::Path;
 use clap::{App, Arg, SubCommand};
 use config::Config;
 use sync::Synchronizer;
+
+fn build(path: &Path, conf: &Config) {
+    if let Err(ref e) = render::build(path, conf) {
+        errors::print_error(e);
+    }
+}
+
+fn sync(path: &Path, conf: &Config, with_build: bool, overwrite: bool) {
+    if with_build {
+        build(path, conf);
+    }
+    let mut synchronizer = Synchronizer::new(conf);
+    if overwrite {
+        synchronizer.push_all_files();
+    } else {
+        synchronizer.execute();
+    }
+}
 
 fn main() {
     // parse command line options
@@ -40,6 +61,7 @@ fn main() {
             .help("Prints the configuration of the config.toml file")
             .multiple(false)
             .takes_value(false))
+        .subcommand(SubCommand::with_name("build").about("Generate the website"))
         .subcommand(SubCommand::with_name("sync")
             .about("Used to synchronize the website with an ftp server")
             .arg(Arg::with_name("overwrite")
@@ -48,10 +70,10 @@ fn main() {
                 .help("Overwrites all remote files")
                 .multiple(false)
                 .takes_value(false))
-            .arg(Arg::with_name("prevent_build")
+            .arg(Arg::with_name("with_build")
                 .short("n")
-                .long("prevent_build")
-                .help("Only syncs the generated files")
+                .long("with_build")
+                .help("Build the project before executing the sync")
                 .multiple(false)
                 .takes_value(false)))
         .get_matches();
@@ -61,38 +83,28 @@ fn main() {
     } else {
         std::env::current_dir().unwrap_or(fs::canonicalize(".").expect("could not determine path"))
     };
-    let show_config = matches.is_present("show_config");
-    let mut sync = false;
-    let mut build = true;
-    // let mut overwrite = false;
-    if let Some(sub_matches) = matches.subcommand_matches("sync") {
-        sync = true;
-        build = !sub_matches.is_present("prevent_build");
-        // overwrite = sub_matches.is_present("overwrite");
-    }
-    // load configuration from config.toml
-    //
-    let mut input = String::new();
-    match File::open(path.join("config.toml").as_path())
-        .and_then(|mut f| f.read_to_string(&mut input)) {
-        Ok(_) => {
-            match toml::from_str::<Config>(input.as_str()) {
-                Ok(mut conf) => {
-                    conf.resolve_paths(&path.as_path());
-                    if show_config {
-                        conf.print();
-                    }
-                    if build {
-                        render::build(path.as_path(), &conf);
-                    }
-                    if sync {
-                        let mut synchronizer = Synchronizer::new(&conf);
-                        synchronizer.execute();
-                    }
-                }
-                Err(error) => panic!("failed to parse config.toml: {}", error),
-            }
+
+    // load configuration from config.toml if present
+    let conf = match Config::load(path.as_path()) {
+        Ok(conf) => conf,
+        Err(ref e) => {
+            errors::print_error(e);
+            Config::new(path.as_path())
         }
-        Err(error) => panic!("failed to open config.toml: {}", error),
+    };
+
+    if matches.is_present("show_config") {
+        conf.print();
+    }
+
+    match matches.subcommand() {
+        ("buid", Some(_)) => build(path.as_path(), &conf),
+        ("sync", Some(matches)) => {
+            sync(path.as_path(),
+                 &conf,
+                 matches.is_present("with_build"),
+                 matches.is_present("overwrite"))
+        }
+        _ => unreachable!(),
     }
 }
