@@ -41,24 +41,28 @@ pub fn build(path: &Path, conf: &Config) -> Result<()> {
     for entry in walker.filter_entry(|e| is_hidden(e))
         .filter(|e| e.is_ok() && is_markdown(e.as_ref().unwrap())) {
         let entry = entry.unwrap();
-        let page_content = convert_markdown_to_html(&entry);
         let mut target_dir = output_dir.clone();
         if entry.path().parent().is_some() {
             for comp in entry.path().parent().unwrap().components().skip(path_comps.len()) {
                 target_dir.push(comp.as_os_str());
             }
         }
-        let html = if entry.file_name() == "gallery.md" {
-            let images = prepare_gallery(&entry, target_dir.clone(), conf);
-            apply_gallery_template(page_content, nav_items.clone(), images, entry.depth(), conf)
-        } else {
-            apply_page_template(page_content, nav_items.clone(), entry.depth(), conf)
-        };
-        write_html_file(html, target_dir.as_path(), &entry);
-        copy_images(entry.path().parent().unwrap(), target_dir.as_path());
+        build_page(nav_items.clone(), &entry, target_dir.as_path(), conf);
     }
     copy_dirs(path, output_dir.as_path(), conf);
     Ok(())
+}
+
+fn build_page(nav_items: Vec<Value>, entry: &DirEntry, target_dir: &Path, conf: &Config) {
+    let page_content = convert_markdown_to_html(&entry);
+    let html = if entry.file_name() == "gallery.md" {
+        let images = prepare_gallery(&entry, target_dir, conf);
+        apply_gallery_template(page_content, nav_items.clone(), images, entry.depth(), conf)
+    } else {
+        apply_page_template(page_content, nav_items.clone(), entry.depth(), conf)
+    };
+    write_html_file(html, target_dir, &entry);
+    copy_images(entry.path().parent().unwrap(), target_dir);
 }
 
 fn copy_dirs(path: &Path, target_path: &Path, conf: &Config) {
@@ -140,7 +144,7 @@ fn collect_navigation_items(path: &Path) -> Vec<Value> {
     nav_entries
 }
 
-fn prepare_gallery(source_entry: &DirEntry, target_path: PathBuf, conf: &Config) -> Vec<Value> {
+fn prepare_gallery(source_entry: &DirEntry, target_path: &Path, conf: &Config) -> Vec<Value> {
     let mut images = Vec::<Value>::new();
     let target_dir = target_path.join(GALLERY_FOLDER_NAME);
     match DirBuilder::new()

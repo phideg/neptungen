@@ -99,21 +99,26 @@ impl Config {
     }
 
     pub fn print(&self) {
-        println!("Title : {:?}", self.title);
-        println!("Template directory : {:?}", self.template_dir);
-        println!("Output directory : {:?}", self.output_dir);
-        println!("SyncSettings");
+        use term_painter::ToStyle;
+        use term_painter::Attr::Bold;
+        let empty_string = String::new();
+        println!("Title : {}", self.title.as_ref().unwrap_or(&empty_string));
+        println!("Template directory : {}",
+                 self.template_dir.as_ref().unwrap_or(&empty_string));
+        println!("Output directory : {}",
+                 self.output_dir.as_ref().unwrap_or(&empty_string));
+        println!("{}", Bold.paint("SyncSettings"));
         if self.sync_settings.is_some() {
             let sync_settings = self.sync_settings.as_ref().unwrap();
-            println!("FTP server: {:?}", sync_settings.ftp_server);
-            println!("FTP port: {:?}", sync_settings.ftp_port.unwrap_or(21));
-            println!("FTP user: {:?}", sync_settings.ftp_user);
-            println!("FTP overwrite: {:?}",
+            println!("  FTP server: {}", sync_settings.ftp_server);
+            println!("  FTP port: {}", sync_settings.ftp_port.unwrap_or(21));
+            println!("  FTP user: {}", sync_settings.ftp_user);
+            println!("  FTP overwrite: {}",
                      sync_settings.ftp_overwrite.unwrap_or(false));
         }
         if self.gallery.is_some() {
             let gallery = self.gallery.as_ref().unwrap();
-            println!("Gallery");
+            println!("{}", Bold.paint("Gallery"));
             println!("  image size : {} x {}",
                      gallery.img_width,
                      gallery.img_height);

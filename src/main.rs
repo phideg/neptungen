@@ -11,6 +11,7 @@ extern crate image;
 extern crate ftp;
 extern crate checksums;
 extern crate term_painter;
+extern crate num_cpus;
 
 mod config;
 mod render;
@@ -55,12 +56,8 @@ fn main() {
             .help("Path to the root folder of the website project")
             .multiple(false)
             .takes_value(true))
-        .arg(Arg::with_name("show_config")
-            .short("s")
-            .long("show_config")
-            .help("Prints the configuration of the config.toml file")
-            .multiple(false)
-            .takes_value(false))
+        .subcommand(SubCommand::with_name("show_config")
+            .about("Prints the configuration of the config.toml file"))
         .subcommand(SubCommand::with_name("build").about("Generate the website"))
         .subcommand(SubCommand::with_name("sync")
             .about("Used to synchronize the website with an ftp server")
@@ -93,18 +90,21 @@ fn main() {
         }
     };
 
-    if matches.is_present("show_config") {
-        conf.print();
-    }
-
     match matches.subcommand() {
-        ("buid", Some(_)) => build(path.as_path(), &conf),
+        ("show_config", Some(_)) => {
+            conf.print();
+        }
+        ("build", Some(_)) => {
+            build(path.as_path(), &conf);
+        }
         ("sync", Some(matches)) => {
             sync(path.as_path(),
                  &conf,
                  matches.is_present("with_build"),
                  matches.is_present("overwrite"))
         }
-        _ => unreachable!(),
+        _ => {
+            println!("{}", matches.usage());
+        }
     }
 }
