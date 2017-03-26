@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/phideg/neptungen.svg?branch=master)](https://travis-ci.org/phideg/neptungen)
-
 # neptungen
 Yet another static Website Generator
 
@@ -141,3 +139,5 @@ Please also have a look into the examples as they are always a good starting poi
 In case neptungen does not fulfill your requirements you might want to look into:
 - [cobalt](https://github.com/cobalt-org/cobalt.rs)
 - [gutenberg](https://github.com/Keats/gutenberg)
+
+
