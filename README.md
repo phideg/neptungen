@@ -21,7 +21,7 @@ Create a new root folder for your website
 mkdir my_new_website
 ```
 
-Each folder beneath that root folder will be separate navigation entry in your page
+Each folder beneath that root folder will be separate navigation entry of your website
 ```bash
 cd my_new_website
 mkdir nav1
