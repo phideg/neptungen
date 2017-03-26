@@ -20,8 +20,7 @@ Create a new root folder for your website
 ```bash
 mkdir my_new_website
 ```
-
-Each folder beneath that root folder will be separate navigation entry of your website
+Each folders beneath that root folder represents a separate page of your website. The name of such a subfolder will used as a label in the navigation menu.
 ```bash
 cd my_new_website
 mkdir nav1
@@ -29,27 +28,32 @@ mkdir nav2
 mkdir nav3
 ```
 
-You can now add a pages to your website by creating *.md files.
+How can you add content to a page? Well, neptungen searches for markdown files and turns them into html which in turn is handed over to the page template. Markdown files must have the *.md extension.
 ```bash
 cd nav1
-touch my_first_page.md
+touch index.md
 ...
 ```
 
 Open and edit the markdown files with the markdown editor of your choice.
 Each folder should only contain one markdown file plus the images you reference in your markdown file.
 
-The final step is to generate the site. Therefore cd in the root dir of your page and run the generator as follows:
+The final step is to generate the site. Therefore cd in the root directory and run neptungen as follows:
 ```bash
-/path/to/your/neptungen_executable/neptungen
+cd ../../my_new_website
+/path/to/your/neptungen_executable/neptungen build
 ``` 
 
 The generated output can typically be found in the `_output` directory.
 
 # Galleries
-Galleries are as simple as other pages. Create a sub directory which must be named `gallery`. Copy or symlink all relevant images into the directory. Finally invoke the generator again as already described before.
+Galleries are as simple as normal pages. Create a `gallery` sub directory within your normal page directory. Copy or symlink all relevant images into it. Finally invoke the generator again as already described before.
 
-The sizes of the images and their thumbs can be controlled via the config.toml configuration file. See section Customize your website.
+The sizes of the images and their thumbs can be controlled via the config.toml configuration file. 
+
+# config.toml
+Neptungen can be tweaked with the config.toml file. [TOML](https://github.com/toml-lang/toml) aims to be a minimal configuration file format that's easy to read due to obvious semantics. Neptungen offeres the following configuration options:
+
 
 # Customize your website
 You don't want to use the builtin website theme? Create the new file config.toml in the root folder of your project.
