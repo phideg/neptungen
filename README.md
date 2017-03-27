@@ -65,7 +65,7 @@ Neptungen can be tweaked with the `config.toml` file. It has to be put into the 
 title = "Here you can give your home page a name"
 template_dir = "_the_name_of_the_templates_directory"
 output_dir = "_name_of_the_output_directory"
-copy_dirs = [ "static_dir1", "static_dir2", ... , "static_dirN" ]
+copy_dirs = [ "static_dir1", "static_dir2", "static_dirN" ]
 
 [gallery]
 img_width = 600
