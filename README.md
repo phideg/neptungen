@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.org/phideg/neptungen.svg?branch=master)](https://travis-ci.org/phideg/neptungen)
+[![Build status](https://ci.appveyor.com/api/projects/status/hvdr3ly46uy68o18?svg=true)](https://ci.appveyor.com/project/phideg/neptungen)
+
 
 # neptungen
 Yet another static Website Generator
