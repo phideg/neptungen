@@ -8,6 +8,22 @@ error_chain! {
     }
 }
 
+pub fn print_message(e: &Error) {
+    use term_painter::ToStyle;
+    use term_painter::Color::*;
+    println!("{}", Red.bold().paint(format!("error: {}", e)));
+
+    for e in e.iter().skip(1) {
+        println!("{}", Red.paint(format!("caused by: {}", e)));
+    }
+
+    // The backtrace is not always generated. Try to run this example
+    // with `RUST_BACKTRACE=1`.
+    if let Some(backtrace) = e.backtrace() {
+        println!("backtrace: {:?}", backtrace);
+    }
+}
+
 pub fn print_error(e: &Error) {
     use term_painter::ToStyle;
     use term_painter::Color::*;

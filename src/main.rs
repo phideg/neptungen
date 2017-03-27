@@ -84,7 +84,7 @@ fn main() {
     let conf = match Config::load(path.as_path()) {
         Ok(conf) => conf,
         Err(ref e) => {
-            errors::print_error(e);
+            errors::print_message(e);
             Config::new(path.as_path())
         }
     };
