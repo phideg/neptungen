@@ -12,11 +12,10 @@ use config::Config;
 use pulldown_cmark::{Parser, html, Options};
 use template;
 use image;
+use config;
 use errors::*;
 use filter::{is_markdown, is_hidden, is_directory, is_image, contains_markdown_file,
              contains_markdown_subdir};
-
-static GALLERY_FOLDER_NAME: &'static str = "gallery";
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MenuCmd {
@@ -146,18 +145,21 @@ fn collect_navigation_items(path: &Path) -> Vec<Value> {
 
 fn prepare_gallery(source_entry: &DirEntry, target_path: &Path, conf: &Config) -> Vec<Value> {
     let mut images = Vec::<Value>::new();
-    let target_dir = target_path.join(GALLERY_FOLDER_NAME);
+    let target_dir = target_path.join(config::GALLERY_FOLDER_NAME);
     match DirBuilder::new()
         .recursive(true)
         .create(&target_dir) {
         Ok(_) => {}
         Err(e) => println!("{}", e),
     }
-    let walker =
-        WalkDir::new(source_entry.path().parent().unwrap().join(GALLERY_FOLDER_NAME).as_path())
-            .min_depth(1)
-            .follow_links(true)
-            .into_iter();
+    let walker = WalkDir::new(source_entry.path()
+            .parent()
+            .unwrap()
+            .join(config::GALLERY_FOLDER_NAME)
+            .as_path())
+        .min_depth(1)
+        .follow_links(true)
+        .into_iter();
     for entry in walker.filter(|e| e.is_ok() && !is_directory(e.as_ref().unwrap())) {
         let entry = entry.unwrap();
         let mut img = image::open(entry.path())
@@ -167,7 +169,7 @@ fn prepare_gallery(source_entry: &DirEntry, target_path: &Path, conf: &Config) -
                 .as_ref());
 
         let mut image_path = PathBuf::from(&target_dir);
-        let mut rel_image_path = PathBuf::from(GALLERY_FOLDER_NAME);
+        let mut rel_image_path = PathBuf::from(config::GALLERY_FOLDER_NAME);
         image_path.push(entry.file_name());
         image_path.set_extension("png");
         rel_image_path.push(entry.file_name());
@@ -183,7 +185,7 @@ fn prepare_gallery(source_entry: &DirEntry, target_path: &Path, conf: &Config) -
         }
 
         let mut thumb_path = PathBuf::from(&target_dir);
-        let mut rel_thumb_path = PathBuf::from(GALLERY_FOLDER_NAME);
+        let mut rel_thumb_path = PathBuf::from(config::GALLERY_FOLDER_NAME);
         let mut thumb_file_name =
             String::from(entry.path().file_stem().map(|s| s.to_str().unwrap()).unwrap());
         thumb_file_name.push_str("_thumb.png");

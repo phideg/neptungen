@@ -3,6 +3,9 @@ use toml;
 use errors::Error;
 use errors::ResultExt;
 
+pub static GALLERY_FOLDER_NAME: &'static str = "images";
+pub static OUTPUT_FOLDER_NAME: &'static str = "_output";
+
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub title: Option<String>,
@@ -15,6 +18,7 @@ pub struct Config {
 
 #[derive(Debug, Deserialize)]
 pub struct Gallery {
+    pub img_dir: Option<String>,
     pub img_width: u32,
     pub img_height: u32,
     pub thumb_width: u32,
@@ -55,13 +59,14 @@ impl Config {
     }
     pub fn resolve_paths(&mut self, base_path: &Path) {
         let output_path =
-            base_path.join(&self.output_dir.as_ref().map(|d| d.as_str()).unwrap_or("_output"));
+            base_path.join(&self.output_dir.as_ref().map(|d| d.as_str()).unwrap_or(OUTPUT_FOLDER_NAME));
         self.output_dir = Some(output_path.as_path()
             .to_str()
             .expect("Could not resolve path to template directory")
             .to_owned());
         if !self.gallery.is_some() {
             self.gallery = Some(Gallery {
+                img_dir: None,
                 img_width: 600,
                 img_height: 800,
                 thumb_width: 90,
@@ -101,12 +106,12 @@ impl Config {
     pub fn print(&self) {
         use term_painter::ToStyle;
         use term_painter::Attr::Bold;
-        let empty_string = String::new();
-        println!("Title : {}", self.title.as_ref().unwrap_or(&empty_string));
+        let none_string = "None".to_string();
+        println!("Title : {}", self.title.as_ref().unwrap_or(&none_string));
         println!("Template directory : {}",
-                 self.template_dir.as_ref().unwrap_or(&empty_string));
+                 self.template_dir.as_ref().unwrap_or(&none_string));
         println!("Output directory : {}",
-                 self.output_dir.as_ref().unwrap_or(&empty_string));
+                 self.output_dir.as_ref().unwrap_or(&OUTPUT_FOLDER_NAME.to_string()));
         println!("{}", Bold.paint("SyncSettings"));
         if self.sync_settings.is_some() {
             let sync_settings = self.sync_settings.as_ref().unwrap();
@@ -119,6 +124,8 @@ impl Config {
         if self.gallery.is_some() {
             let gallery = self.gallery.as_ref().unwrap();
             println!("{}", Bold.paint("Gallery"));
+            println!("  image directory: {}",
+                     self.template_dir.as_ref().unwrap_or(&"images".to_string()));
             println!("  image size : {} x {}",
                      gallery.img_width,
                      gallery.img_height);

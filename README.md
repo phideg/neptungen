@@ -56,9 +56,9 @@ cd ../../my_new_website
 By default the generated output can be found in the `_output` directory.
 
 # Galleries
-Galleries are as simple as normal pages. Create a `gallery` sub directory within any of your page directories. Copy or symlink all relevant images into it. Finally invoke the generator again as already described before.
+Galleries are as similar to normal pages. Create an `images` sub directory within any of your page directories. Copy or symlink all relevant images into it. Create an markdown file named `gallery.md`. Neptungen will then call the gallery.liq template to generate the gallery page.
 
-By defailt the images will be resized to 800x600 pixels and the corresponding thumbs nails will be set to 90x90 pixels. Those settings can be specified via a separate configuration file `config.toml`. 
+By defailt the images are resized to 800x600 pixels and the corresponding thumbs nails are set to 90x90 pixels. Those default settings can be overwritten via configuration file `config.toml`. 
 
 # config.toml
 Neptungen can be tweaked with the `config.toml` file. It has to be put into the root directory of your project. [TOML](https://github.com/toml-lang/toml) aims to be a minimal configuration file format that's easy to read due to obvious semantics. Neptungen offers the following configuration options:
@@ -70,6 +70,7 @@ output_dir = "_name_of_the_output_directory"
 copy_dirs = [ "static_dir1", "static_dir2", "static_dirN" ]
 
 [gallery]
+img_dir = "images"
 img_width = 600
 img_height = 500
 thumb_width = 90
@@ -81,6 +82,8 @@ ftp_port = 21
 ftp_user = "my_ftp_user"
 
 ```
+
+Neptungen will also work without a `config.toml`. In this case default settings will be used!
 
 # Customize your website
 You don't want to use the built-in website theme? Just create a template directory and specify the path to that directory in your config.toml file (`template_dir = "my_template_folder"`).
