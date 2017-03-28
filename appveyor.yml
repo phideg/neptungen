@@ -17,7 +17,7 @@ environment:
       RUST_VERSION: nightly
 
   allow_failures:
-    RUST_VERSION: nightly
+    - RUST_VERSION: nightly
 
 install:
   - ps: >-

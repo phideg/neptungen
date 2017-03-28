@@ -59,7 +59,11 @@ html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif}
     </a>
     <h4><b>Menu</b></h4>
     {% for item in nav_items %}
-    <a href="{{ root_dir }}{{ item.url }}" class="w3-hover-black">{{ item.name }}</a>
+      {% if item.menu_cmd == "OpenLevel" %}
+        <a href="\#" class="w3-deep-orange">{{ item.name }}</a>
+      {% else %}
+        <a href="{{ root_dir }}{{ item.url }}" class="w3-hover-black">{{ item.name }}</a>
+      {% endif %}
     {% endfor %}
     </nav>
 
@@ -77,7 +81,7 @@ html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif}
 
     <footer id="myFooter">
         <div class="w3-container w3-theme-l2 w3-padding-32">
-        <h4>Footer</h4>
+        <h4>Generated with <a href="https://github.com/phideg/neptungen" target="_blank">neptungen</a></h4>
         </div>
 
         <div class="w3-container w3-theme-l1">
@@ -156,7 +160,11 @@ html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif}
     </a>
     <h4><b>Menu</b></h4>
     {% for item in nav_items %}
-    <a href="{{ root_dir }}{{ item.url }}" class="w3-hover-black">{{ item.name }}</a>
+      {% if item.menu_cmd == "OpenLevel" %}
+        <a href="\#" class="w3-deep-orange">{{ item.name }}</a>
+      {% else %}
+        <a href="{{ root_dir }}{{ item.url }}" class="w3-hover-black">{{ item.name }}</a>
+      {% endif %}
     {% endfor %}
     </nav>
 
@@ -169,7 +177,7 @@ html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif}
     <div class="w3-row w3-padding-64">
         <div class="w3-twothird w3-container">
             {{ content }}
-            <p>Click on the image to show details</p>                   
+            <p>Click on the image to show enlarge</p>                   
             {% for image in images %}
             <a class="zoom" rel="group" href="{{image.name}}">
                <img src="{{image.thumb}}" />
@@ -180,7 +188,7 @@ html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif}
 
     <footer id="myFooter">
         <div class="w3-container w3-theme-l2 w3-padding-32">
-        <h4>Footer</h4>
+        <h4>Generated with <a href="https://github.com/phideg/neptungen" target="_blank">neptungen</a></h4>
         </div>
 
         <div class="w3-container w3-theme-l1">
