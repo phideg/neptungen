@@ -125,7 +125,7 @@ impl Config {
             let gallery = self.gallery.as_ref().unwrap();
             println!("{}", Bold.paint("Gallery"));
             println!("  image directory: {}",
-                     self.template_dir.as_ref().unwrap_or(&"images".to_string()));
+                     gallery.img_dir.as_ref().unwrap_or(&"images".to_string()));
             println!("  image size : {} x {}",
                      gallery.img_width,
                      gallery.img_height);

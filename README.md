@@ -83,7 +83,11 @@ ftp_user = "my_ftp_user"
 
 ```
 
-Neptungen will also work without a `config.toml`. In this case default settings will be used!
+Neptungen will also work without a `config.toml`. In case no config was provided default settings are used. Run the following in a project without a `config.toml` to see the default values.
+
+```bash
+neptungen show_config
+```
 
 # Customize your website
 You don't want to use the built-in website theme? Just create a template directory and specify the path to that directory in your config.toml file (`template_dir = "my_template_folder"`).
