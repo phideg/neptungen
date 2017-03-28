@@ -11,6 +11,7 @@ extern crate image;
 extern crate ftp;
 extern crate checksums;
 extern crate term_painter;
+extern crate rpassword;
 
 mod config;
 mod render;

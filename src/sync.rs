@@ -14,6 +14,7 @@ use checksums::ops::{CompareResult, CompareFileResult};
 use checksums::Algorithm;
 use walkdir::WalkDir;
 use filter;
+use rpassword;
 
 static CRC_FILE_NAME: &'static str = "hashsums.crc";
 static OLD_CRC_FILE_NAME: &'static str = "hashsums_old.crc";
@@ -65,12 +66,8 @@ impl<'a> Synchronizer<'a> {
         let mut ftp_stream = FtpStream::connect(connection_str.as_str()).unwrap();
         println!("Enter password for ftp server '{}'",
                  sync_settings.ftp_user.as_str());
-        let mut passwd = String::new();
-        io::stdin().read_line(&mut passwd).expect("Couldn't read password from standard input");
-        passwd.pop();  // remove newline
-        if passwd.ends_with("\r") {
-            passwd.pop();  // remove carriage returns
-        }
+        let passwd = rpassword::prompt_password_stdout("Password: ")
+            .expect("Couldn't read password from standard input");
         ftp_stream.login(sync_settings.ftp_user.as_str(), passwd.as_str())
             .expect("FTP Login failed.");
         ftp_stream
