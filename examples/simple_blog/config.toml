@@ -1,0 +1,10 @@
+title = "Lorem Impsum"
+template_dir = ".templates"
+output_dir = "PUBLIC"
+copy_dirs = [ "scripts" ]
+
+[gallery]
+img_width = 600
+img_height = 500
+thumb_width = 90
+thumb_height = 90

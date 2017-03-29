@@ -1,0 +1,3 @@
+# Who doesn't like dogs ...
+
+images have been taken from [pixabay](https://pixabay.com/en/photos/?q=dog)
