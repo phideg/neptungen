@@ -60,6 +60,15 @@ Galleries are as similar to normal pages. Create an `images` sub directory withi
 
 By defailt the images are resized to 800x600 pixels and the corresponding thumbs nails are set to 90x90 pixels. Those default settings can be overwritten via configuration file `config.toml`. 
 
+# Sync
+__ftp__
+So far you can only synchronize your static content with an FTP server. See ftp settings in `config.toml`. Currently neptungen will always try to sync your static website at the root of your FTP.
+
+ToDo:  
+* [ ] Allow sync to remote subdir  
+* [ ] Git  
+* [ ] Webdav  
+
 # config.toml
 Neptungen can be tweaked with the `config.toml` file. It has to be put into the root directory of your project. [TOML](https://github.com/toml-lang/toml) aims to be a minimal configuration file format that's easy to read due to obvious semantics. Neptungen offers the following configuration options:
 
