@@ -3,8 +3,8 @@ use toml;
 use errors::Error;
 use errors::ResultExt;
 
-pub static GALLERY_FOLDER_NAME: &'static str = "images";
-pub static OUTPUT_FOLDER_NAME: &'static str = "_output";
+static GALLERY_FOLDER_NAME: &'static str = "images";
+static OUTPUT_FOLDER_NAME: &'static str = "_output";
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -66,12 +66,14 @@ impl Config {
             .to_owned());
         if !self.gallery.is_some() {
             self.gallery = Some(Gallery {
-                img_dir: None,
+                img_dir: Some(GALLERY_FOLDER_NAME.to_string()),
                 img_width: 600,
                 img_height: 800,
                 thumb_width: 90,
                 thumb_height: 90,
             })
+        } else if self.gallery.as_ref().unwrap().img_dir.is_none() {
+            self.gallery.as_mut().unwrap().img_dir = Some(GALLERY_FOLDER_NAME.to_string());
         }
         if self.template_dir.is_some() {
             let template_path = base_path.join(&self.template_dir.as_ref().unwrap().as_str());

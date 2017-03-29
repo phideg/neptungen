@@ -128,7 +128,15 @@ impl<'a> Synchronizer<'a> {
             Ok((compare_result, compare_file_result)) => {
                 for entry in compare_result {
                     match entry {
-                        CompareResult::FileRemoved(file) => println!("Removing file {:?}", file),
+                        CompareResult::FileRemoved(file) => {
+                            println!("Removing file {:?}", file);
+                            let path = self.output_path.join(file.as_str());
+                            if path.is_dir() {
+                                self.remove_directory(path.as_path());
+                            } else {
+                                self.remove_file(path.as_path());
+                            }
+                        }
                         CompareResult::FileAdded(file) => {
                             println!("Adding file {:?}", file.as_str());
                             let path = self.output_path.join(file.as_str());
@@ -197,6 +205,40 @@ impl<'a> Synchronizer<'a> {
                     .expect(format!("Couldn't change to dir '{}'", &dir).as_ref());
             }
         }
+    }
+
+    fn remove_directory(&mut self, src_dir: &Path) {
+        self.ftp_stream.cwd("/").expect("Couldn't change to root dir");
+        for comp in src_dir.components().skip(self.output_path_offset) {
+            let dir = comp.as_ref()
+                .to_str()
+                .expect(format!("Couldn't convert component '{:?}' to string.", comp).as_ref());
+            if self.ftp_stream.cwd(dir).is_err() {
+                println!("Couldn't change to '{}'", dir);
+                return;
+            }
+        }
+        let comp = src_dir.components().last().unwrap();
+        if self.ftp_stream.cwd("..").is_ok() {
+            self.ftp_stream
+                .rmdir(comp.as_ref().to_str().unwrap())
+                .expect(format!("Couldn't remove dir '{:?}'", src_dir).as_ref());
+        }
+
+    }
+
+    fn remove_file(&mut self, src_dir: &Path) {
+        self.ftp_stream.cwd("/").expect("Couldn't change to root dir");
+        for comp in src_dir.components().skip(self.output_path_offset) {
+            let dir = comp.as_ref()
+                .to_str()
+                .expect(format!("Couldn't convert component '{:?}' to string.", comp).as_ref());
+            let _ = self.ftp_stream.cwd(dir);
+        }
+        let comp = src_dir.components().last().unwrap();
+        self.ftp_stream
+            .rm(comp.as_ref().to_str().unwrap())
+            .expect(format!("Couldn't remove file '{:?}'", &comp).as_ref());
     }
 
     fn push_file(&mut self, src_path: &Path) {
