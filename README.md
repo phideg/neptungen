@@ -66,8 +66,6 @@ So far you can only synchronize your static content with an FTP server. See ftp 
 
 ToDo:  
 * [ ] Allow sync to remote subdir  
-* [ ] Git  
-* [ ] Webdav  
 
 # config.toml
 Neptungen can be tweaked with the `config.toml` file. It has to be put into the root directory of your project. [TOML](https://github.com/toml-lang/toml) aims to be a minimal configuration file format that's easy to read due to obvious semantics. Neptungen offers the following configuration options:
