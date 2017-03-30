@@ -61,7 +61,7 @@ Galleries are as similar to normal pages. Create an `images` sub directory withi
 By defailt the images are resized to 800x600 pixels and the corresponding thumbs nails are set to 90x90 pixels. Those default settings can be overwritten via configuration file `config.toml`. 
 
 # Sync
-__ftp__
+__ftp__  
 So far you can only synchronize your static content with an FTP server. See ftp settings in `config.toml`. Currently neptungen will always try to sync your static website at the root of your FTP.
 
 ToDo:  
