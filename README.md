@@ -12,12 +12,26 @@ The goal of neptungen is to be easy to use and minutes to set up even if you are
 
 But probably the real reason for neptungen was the desire to learn programming in Rust. So over time the code will hopefully get more idiomatic.
 
+# How does it work
+It turns a directory tree containing one markdown file per directory into a static website. The look and feel of the generated website is controlled via [liquid](https://shopify.github.io/liquid/) templates.
+
 # Features
 - Completely written in Rust
-- CMS based on CommonMark
+- Turns CommonMark into HTML5 
 - Built-in gallery generator
 - Built in FTP synchronization
 - Customizable via [liquid](https://shopify.github.io/liquid/) templates
+
+# Installation
+You can download one of the [release](/phideg/neptungen/releases) or build the neptungen executable yourself.
+
+__how to build neptungen__ 
+Install stable rust from [here](https://www.rust-lang.org/en-US/install.html) and clone this repo. Finally you can use cargo to build the executable.
+
+```bash
+cd neptungen
+cargo build --release
+```
 
 # Who uses neptungen
 - [TSC Neptun Bruehl](http://tsc-neptun-bruehl.de)
