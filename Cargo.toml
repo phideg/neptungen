@@ -1,6 +1,6 @@
 [package]
 name = "neptungen"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Philipp Degler <deglerp@googlemail.com>"]
 
 [[bin]]
