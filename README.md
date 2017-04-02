@@ -70,9 +70,9 @@ cd ../../my_new_website
 By default the generated output can be found in the `_output` directory.
 
 # Galleries
-Galleries are as similar to normal pages. Create an `images` sub directory within any of your page directories. Copy or symlink all relevant images into it. Create an markdown file named `gallery.md`. Neptungen will then call the gallery.liq template to generate the gallery page.
+Galleries are similar to normal pages. Create an `images` sub directory within any of your page directories. Copy or symlink all relevant images into it. Create a markdown file named `gallery.md`. Neptungen will then call the gallery.liq template to generate the gallery page.
 
-By defailt the images are resized to 800x600 pixels and the corresponding thumbs nails are set to 90x90 pixels. Those default settings can be overwritten via configuration file `config.toml`. 
+By defailt the images are resized to 800x600 pixels and the corresponding thumbs nails are set to 90x90 pixels. Those default settings can be overwritten via the configuration file `config.toml`. 
 
 # Sync
 __ftp__  
@@ -111,6 +111,8 @@ Neptungen will also work without a `config.toml`. In case no config was provided
 ```bash
 neptungen show_config
 ```
+# The default template
+The default template of neptungen is based on the "Web Page Template" offered by [W3C schools](https://www.w3schools.com/w3css/w3css_templates.asp). The next section will describe in more detail how you could design your own custom templates.
 
 # Customize your website
 You don't want to use the built-in website theme? Just create a template directory and specify the path to that directory in your config.toml file (`template_dir = "my_template_folder"`).
