@@ -54,7 +54,7 @@ deploy:
   # - Paste the output down here
   auth_token:
     secure: z4UEQuTgOwHJ077p6FC24KIVywEbZlJiDhelHMRkjiXPWa4pBbwYGtTfnhiW0I/g
-  description: ''
+  description: 'neptungen'
   on:
     # TODO Here you can pick which targets will generate binary releases
     # In this example, there are some targets that are tested using the stable
