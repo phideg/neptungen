@@ -1,3 +1,4 @@
+use std::vec::Vec;
 use std::fs;
 use std::fs::File;
 use std::fs::DirBuilder;
@@ -13,6 +14,7 @@ use pulldown_cmark::{Parser, html, Options};
 use template;
 use image;
 use errors::*;
+use rayon::prelude::*;
 use filter::{is_markdown, is_hidden, is_directory, is_image, contains_markdown_file,
              contains_markdown_subdir};
 
@@ -32,27 +34,34 @@ impl fmt::Display for MenuCmd {
 
 
 pub fn build(path: &Path, conf: &Config) -> Result<()> {
-    let walker = WalkDir::new(path).min_depth(1).into_iter();
     let path_comps = path.components().collect::<Vec<_>>();
     let output_dir = PathBuf::from(conf.output_dir.as_ref().unwrap());
     let nav_items = collect_navigation_items(path);
-    for entry in walker.filter_entry(|e| is_hidden(e))
-        .filter(|e| e.is_ok() && is_markdown(e.as_ref().unwrap())) {
-        let entry = entry.unwrap();
-        let mut target_dir = output_dir.clone();
-        if entry.path().parent().is_some() {
-            for comp in entry.path().parent().unwrap().components().skip(path_comps.len()) {
-                target_dir.push(comp.as_os_str());
+    let entries = WalkDir::new(path)
+        .min_depth(1)
+        .into_iter()
+        .filter_entry(|e| is_hidden(e))
+        .filter(|e| e.is_ok() && is_markdown(e.as_ref().unwrap()))
+        .collect::<Vec<_>>();
+    entries.par_iter()
+        .for_each(|e| {
+            if e.is_ok() {
+                let src = e.as_ref().unwrap();
+                let mut target_dir = output_dir.clone();
+                if src.path().parent().is_some() {
+                    for comp in src.path().parent().unwrap().components().skip(path_comps.len()) {
+                        target_dir.push(comp.as_os_str());
+                    }
+                }
+                build_page(nav_items.clone(), &src, target_dir.as_path(), conf);
             }
-        }
-        build_page(nav_items.clone(), &entry, target_dir.as_path(), conf);
-    }
+        });
     copy_dirs(path, output_dir.as_path(), conf);
     Ok(())
 }
 
 fn build_page(nav_items: Vec<Value>, entry: &DirEntry, target_dir: &Path, conf: &Config) {
-    let page_content = convert_markdown_to_html(&entry);
+    let page_content = convert_markdown_to_html(&entry.path());
     let html = if entry.file_name() == "gallery.md" {
         let images = prepare_gallery(&entry, target_dir, conf);
         apply_gallery_template(page_content, nav_items.clone(), images, entry.depth(), conf)
@@ -280,11 +289,11 @@ fn apply_page_template(content: String,
     }
 }
 
-fn convert_markdown_to_html(entry: &DirEntry) -> String {
+fn convert_markdown_to_html(entry: &Path) -> String {
     let mut markdown = String::new();
     let mut html_output = String::new();
-    match File::open(entry.path()).and_then(|mut f| f.read_to_string(&mut markdown)) {
-        Err(error) => panic!("failed to open {}: {}", entry.path().display(), error),
+    match File::open(entry).and_then(|mut f| f.read_to_string(&mut markdown)) {
+        Err(error) => panic!("failed to open {}: {}", entry.display(), error),
         Ok(_) => {
             html::push_html(&mut html_output,
                             Parser::new_ext(markdown.as_str(), Options::empty()))
