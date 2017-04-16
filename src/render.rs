@@ -36,7 +36,7 @@ impl fmt::Display for MenuCmd {
 pub fn build(path: &Path, conf: &Config) -> Result<()> {
     let path_comps = path.components().collect::<Vec<_>>();
     let output_dir = PathBuf::from(conf.output_dir.as_ref().unwrap());
-    let nav_items = collect_navigation_items(path);
+    let nav_items = prepare_site_structure(path, output_dir.as_path());
     let entries = WalkDir::new(path)
         .min_depth(1)
         .into_iter()
@@ -45,16 +45,14 @@ pub fn build(path: &Path, conf: &Config) -> Result<()> {
         .collect::<Vec<_>>();
     entries.par_iter()
         .for_each(|e| {
-            if e.is_ok() {
-                let src = e.as_ref().unwrap();
-                let mut target_dir = output_dir.clone();
-                if src.path().parent().is_some() {
-                    for comp in src.path().parent().unwrap().components().skip(path_comps.len()) {
-                        target_dir.push(comp.as_os_str());
-                    }
+            let src = e.as_ref().unwrap();
+            let mut target_dir = output_dir.clone();
+            if src.path().parent().is_some() {
+                for comp in src.path().parent().unwrap().components().skip(path_comps.len()) {
+                    target_dir.push(comp.as_os_str());
                 }
-                build_page(nav_items.clone(), &src, target_dir.as_path(), conf);
             }
+            build_page(nav_items.clone(), &src, target_dir.as_path(), conf);
         });
     copy_dirs(path, output_dir.as_path(), conf);
     Ok(())
@@ -115,7 +113,7 @@ fn copy_images(source: &Path, target: &Path) {
     }
 }
 
-fn collect_navigation_items(path: &Path) -> Vec<Value> {
+fn prepare_site_structure(path: &Path, target_path: &Path) -> Vec<Value> {
     let mut nav_entries = Vec::<Value>::new();
     let walker = WalkDir::new(path).min_depth(1).sort_by(|a, b| a.cmp(b)).into_iter();
     let mut prev_depth = 1;
@@ -129,6 +127,13 @@ fn collect_navigation_items(path: &Path) -> Vec<Value> {
         let mut url = PathBuf::new();
         for comp in entry.path().components().skip(path_comps.len()) {
             url.push(comp.as_os_str());
+        }
+        let target_dir = target_path.join(url.as_path());
+        match DirBuilder::new()
+            .recursive(true)
+            .create(target_dir) {
+            Ok(_) => {}
+            Err(e) => println!("{}", e),
         }
         url.push("index.html");
         let mut nav_entry = HashMap::new();
@@ -162,15 +167,17 @@ fn prepare_gallery(source_entry: &DirEntry, target_path: &Path, conf: &Config) -
         Ok(_) => {}
         Err(e) => println!("{}", e),
     }
-    let walker = WalkDir::new(source_entry.path()
+    let entries = WalkDir::new(source_entry.path()
             .parent()
             .unwrap()
             .join(img_dir.as_str())
             .as_path())
         .min_depth(1)
         .follow_links(true)
-        .into_iter();
-    for entry in walker.filter(|e| e.is_ok() && !is_directory(e.as_ref().unwrap())) {
+        .into_iter()
+        .filter(|e| e.is_ok() && !is_directory(e.as_ref().unwrap()))
+        .collect::<Vec<_>>();
+    for entry in entries {
         let entry = entry.unwrap();
         let mut img = image::open(entry.path())
             .expect(format!("Resize of '{}' failed: The gallery folder should only contain \
@@ -190,7 +197,7 @@ fn prepare_gallery(source_entry: &DirEntry, target_path: &Path, conf: &Config) -
                              gallery_settings.img_height,
                              image::FilterType::Nearest);
             img.save(fout, image::PNG)
-                .expect(format!("Saving thumb image '{}' failed", image_path.display()).as_ref());
+                .expect(format!("Saving image '{}' failed", image_path.display()).as_ref());
         }
 
         let mut thumb_path = PathBuf::from(&target_dir);
@@ -303,12 +310,6 @@ fn convert_markdown_to_html(entry: &Path) -> String {
 }
 
 fn write_html_file(html: String, target_dir: &Path, entry: &DirEntry) {
-    match DirBuilder::new()
-        .recursive(true)
-        .create(target_dir) {
-        Ok(_) => {}
-        Err(e) => println!("{}", e),
-    }
     let html_file = match entry.file_name().to_str() {
         Some(fname) => {
             let mut tmp_path = PathBuf::from(fname);
