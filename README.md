@@ -21,6 +21,7 @@ It turns a directory tree containing one markdown file per directory into a stat
 - Built-in gallery generator
 - Built in FTP synchronization
 - Customizable via [liquid](https://shopify.github.io/liquid/) templates
+- Page generator uses rayon :)
 
 # Installation
 You can download one of the [releases](https://github.com/phideg/neptungen/releases) or build the neptungen executable yourself.

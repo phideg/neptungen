@@ -1,3 +1,4 @@
 target
 Cargo.lock
 .history
+examples/simple_blog/PUBLIC
