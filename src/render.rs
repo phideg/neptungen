@@ -32,11 +32,11 @@ impl fmt::Display for MenuCmd {
     }
 }
 
-
 pub fn build(path: &Path, conf: &Config) -> Result<()> {
     let path_comps = path.components().collect::<Vec<_>>();
     let output_dir = PathBuf::from(conf.output_dir.as_ref().unwrap());
     let nav_items = prepare_site_structure(path, output_dir.as_path());
+    // let last_gen_timestmp = set_and_determine_last_generation(output_dir.as_path());
     let entries = WalkDir::new(path)
         .min_depth(1)
         .into_iter()
@@ -327,3 +327,7 @@ fn write_html_file(html: String, target_dir: &Path, entry: &DirEntry) {
     }
     println!("written file {}", file_path.display());
 }
+
+// fn set_and_determine_last_generation(target_dir: &Path) -> i64 {
+    
+// }
