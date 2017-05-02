@@ -2,8 +2,9 @@
 extern crate error_chain;
 #[macro_use]
 extern crate serde_derive;
-extern crate toml;
+#[macro_use]
 extern crate clap;
+extern crate toml;
 extern crate walkdir;
 extern crate pulldown_cmark;
 extern crate liquid;
@@ -50,7 +51,7 @@ fn main() {
     //
     let matches = App::new("neptungen")
         .about("Simple website generator")
-        .version("0.0.1")
+        .version(crate_version!())
         .arg(Arg::with_name("project_path")
             .short("p")
             .long("project_path")
