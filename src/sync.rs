@@ -19,12 +19,6 @@ use rpassword;
 static CRC_FILE_NAME: &'static str = "hashsums.crc";
 static OLD_CRC_FILE_NAME: &'static str = "hashsums_old.crc";
 
-macro_rules! ftp_stream {
-    (&mut self) => (
-        self.ftp_stream.expect("FTP not setup correctly")
-    )
-}
-
 pub struct Synchronizer<'a> {
     conf: &'a Config,
     hashsums: BTreeMap<String, String>,
@@ -151,7 +145,7 @@ impl<'a> Synchronizer<'a> {
                 }
                 for entry in compare_file_result {
                     match entry {
-                        CompareFileResult::FileDiffers { file, was_hash: _, new_hash: _ } => {
+                        CompareFileResult::FileDiffers { file, .. } => {
                             println!("Updateing file {:?}", file);
                             let path = self.output_path.join(file.as_str());
                             if path.is_dir() {

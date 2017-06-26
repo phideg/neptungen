@@ -52,7 +52,7 @@ pub fn build(path: &Path, conf: &Config) -> Result<()> {
                     target_dir.push(comp.as_os_str());
                 }
             }
-            build_page(nav_items.clone(), &src, target_dir.as_path(), conf);
+            build_page(nav_items.clone(), src, target_dir.as_path(), conf);
         });
     copy_dirs(path, output_dir.as_path(), conf);
     Ok(())
