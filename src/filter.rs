@@ -10,7 +10,7 @@ pub fn is_markdown(entry: &DirEntry) -> bool {
 pub fn is_hidden(entry: &DirEntry) -> bool {
     entry.file_name()
         .to_str()
-        .map(|s| !s.starts_with(".") && !s.starts_with("_"))
+        .map(|s| !s.starts_with('.') && !s.starts_with('_'))
         .unwrap_or(false)
 }
 
@@ -31,27 +31,17 @@ pub fn is_image(entry: &DirEntry) -> bool {
 }
 
 pub fn contains_markdown_file(entry: &DirEntry) -> bool {
-    let mut contains_markdown = false;
-    for _ in WalkDir::new(entry.path())
+    WalkDir::new(entry.path())
         .into_iter()
-        .filter(|e| e.is_ok() && is_markdown(e.as_ref().unwrap())) {
-        contains_markdown = true;
-        break;
-    }
-    contains_markdown
+        .any(|e| e.is_ok() && is_markdown(e.as_ref().unwrap()))
 }
 
 pub fn contains_markdown_subdir(entry: &DirEntry) -> bool {
-    let mut contains_subdir = false;
-    for _ in WalkDir::new(entry.path())
+    WalkDir::new(entry.path())
         .min_depth(1)
         .into_iter()
-        .filter(|e| {
+        .any(|e| {
             e.is_ok() && is_directory(e.as_ref().unwrap()) &&
             contains_markdown_file(e.as_ref().unwrap())
-        }) {
-        contains_subdir = true;
-        break;
-    }
-    contains_subdir
+        })
 }

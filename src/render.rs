@@ -59,14 +59,14 @@ pub fn build(path: &Path, conf: &Config) -> Result<()> {
 }
 
 fn build_page(nav_items: Vec<Value>, entry: &DirEntry, target_dir: &Path, conf: &Config) {
-    let page_content = convert_markdown_to_html(&entry.path());
+    let page_content = convert_markdown_to_html(entry.path());
     let html = if entry.file_name() == "gallery.md" {
-        let images = prepare_gallery(&entry, target_dir, conf);
-        apply_gallery_template(page_content, nav_items.clone(), images, entry.depth(), conf)
+        let images = prepare_gallery(entry, target_dir, conf);
+        apply_gallery_template(page_content, nav_items, images, entry.depth(), conf)
     } else {
-        apply_page_template(page_content, nav_items.clone(), entry.depth(), conf)
+        apply_page_template(page_content, nav_items, entry.depth(), conf)
     };
-    write_html_file(html, target_dir, &entry);
+    write_html_file(&html, target_dir, entry);
     copy_images(entry.path().parent().unwrap(), target_dir);
 }
 
@@ -192,7 +192,7 @@ fn prepare_gallery(source_entry: &DirEntry, target_path: &Path, conf: &Config) -
         rel_image_path.push(entry.file_name());
         rel_image_path.set_extension("png");
         if !image_path.exists() {
-            let ref mut fout = File::create(&image_path).unwrap();
+            let fout = &mut File::create(&image_path).unwrap();
             img = img.resize(gallery_settings.img_width,
                              gallery_settings.img_height,
                              image::FilterType::Nearest);
@@ -208,7 +208,7 @@ fn prepare_gallery(source_entry: &DirEntry, target_path: &Path, conf: &Config) -
         thumb_path.push(thumb_file_name.clone());
         rel_thumb_path.push(thumb_file_name);
         if !thumb_path.exists() {
-            let ref mut fout = File::create(&thumb_path).unwrap();
+            let fout = &mut File::create(&thumb_path).unwrap();
             img = img.resize(gallery_settings.thumb_width,
                              gallery_settings.thumb_height,
                              image::FilterType::Nearest);
@@ -309,7 +309,7 @@ fn convert_markdown_to_html(entry: &Path) -> String {
     html_output
 }
 
-fn write_html_file(html: String, target_dir: &Path, entry: &DirEntry) {
+fn write_html_file(html: &str, target_dir: &Path, entry: &DirEntry) {
     let html_file = match entry.file_name().to_str() {
         Some(fname) => {
             let mut tmp_path = PathBuf::from(fname);

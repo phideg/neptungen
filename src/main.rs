@@ -80,7 +80,8 @@ fn main() {
         fs::canonicalize(matches.value_of("project_path").unwrap_or("."))
             .expect("could not determine path")
     } else {
-        std::env::current_dir().unwrap_or(fs::canonicalize(".").expect("could not determine path"))
+        std::env::current_dir()
+            .unwrap_or_else(|_| fs::canonicalize(".").expect("could not determine path"))
     };
 
     // load configuration from config.toml if present

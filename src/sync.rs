@@ -92,7 +92,7 @@ impl<'a> Synchronizer<'a> {
                     .expect(format!("Couldn't create file '{}'.", OLD_CRC_FILE_NAME).as_str());
                 stream.read_to_end(&mut buf)
                     .map(|_| f.write_all(buf.as_slice()).expect("Couldn't write hashsums file."))
-                    .map_err(|e| FtpError::ConnectionError(e))
+                    .map_err(FtpError::ConnectionError)
             })
             .and_then(|_| {
                 // load old checksums
@@ -144,17 +144,14 @@ impl<'a> Synchronizer<'a> {
                     }
                 }
                 for entry in compare_file_result {
-                    match entry {
-                        CompareFileResult::FileDiffers { file, .. } => {
-                            println!("Updateing file {:?}", file);
-                            let path = self.output_path.join(file.as_str());
-                            if path.is_dir() {
-                                self.create_and_change_to_directory(path.as_path());
-                            } else {
-                                self.push_file(path.as_path());
-                            }
+                    if let CompareFileResult::FileDiffers { file, .. } = entry {
+                        println!("Updateing file {:?}", file);
+                        let path = self.output_path.join(file.as_str());
+                        if path.is_dir() {
+                            self.create_and_change_to_directory(path.as_path());
+                        } else {
+                            self.push_file(path.as_path());
                         }
-                        _ => {}
                     }
                 }
             }
@@ -164,7 +161,7 @@ impl<'a> Synchronizer<'a> {
             }
         };
         let crc_file_path = self.output_path.join(CRC_FILE_NAME);
-        let _ = self.push_file(crc_file_path.as_path());
+        self.push_file(crc_file_path.as_path());
     }
 
     pub fn push_all_files(&mut self) {
