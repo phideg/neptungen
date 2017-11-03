@@ -37,14 +37,16 @@ impl<'a> Synchronizer<'a> {
         let ftp_stream = Synchronizer::ftp_login(conf);
         Synchronizer {
             conf: conf,
-            hashsums: ops::create_hashes(output_path.as_path(),
-                                         BTreeSet::new(),
-                                         Algorithm::CRC64,
-                                         None,
-                                         false,
-                                         4,
-                                         stdout(),
-                                         &mut stderr()),
+            hashsums: ops::create_hashes(
+                output_path.as_path(),
+                BTreeSet::new(),
+                Algorithm::CRC64,
+                None,
+                false,
+                4,
+                stdout(),
+                &mut stderr(),
+            ),
             output_path: output_path.clone(),
             output_path_offset: output_path_comps.len(),
             ftp_stream: ftp_stream,
@@ -54,69 +56,95 @@ impl<'a> Synchronizer<'a> {
     fn ftp_login(conf: &Config) -> FtpStream {
         // connect to ftp server
         let sync_settings = conf.sync_settings.as_ref().unwrap();
-        let connection_str = format!("{}:{}",
-                                     sync_settings.ftp_server,
-                                     sync_settings.ftp_port.unwrap_or(21));
+        let connection_str = format!(
+            "{}:{}",
+            sync_settings.ftp_server,
+            sync_settings.ftp_port.unwrap_or(21)
+        );
         let mut ftp_stream = FtpStream::connect(connection_str.as_str()).unwrap();
-        println!("Enter password for ftp server '{}'",
-                 sync_settings.ftp_user.as_str());
-        let passwd = rpassword::prompt_password_stdout("Password: ")
-            .expect("Couldn't read password from standard input");
-        ftp_stream.login(sync_settings.ftp_user.as_str(), passwd.as_str())
+        println!(
+            "Enter password for ftp server '{}'",
+            sync_settings.ftp_user.as_str()
+        );
+        let passwd = rpassword::prompt_password_stdout("Password: ").expect(
+            "Couldn't read password from standard input",
+        );
+        ftp_stream
+            .login(sync_settings.ftp_user.as_str(), passwd.as_str())
             .expect("FTP Login failed.");
         ftp_stream
     }
 
     pub fn execute(&mut self) {
         // create new checksums file
-        let hash_file_path = PathBuf::from(self.conf.output_dir.as_ref().unwrap())
-            .join(CRC_FILE_NAME);
-        let hash_file = hash_file_path.clone()
+        let hash_file_path =
+            PathBuf::from(self.conf.output_dir.as_ref().unwrap()).join(CRC_FILE_NAME);
+        let hash_file = hash_file_path
+            .clone()
             .into_os_string()
             .into_string()
             .expect("hash file could not be determined");
-        ops::write_hashes(&(hash_file, hash_file_path),
-                          Algorithm::CRC64,
-                          self.hashsums.clone());
+        ops::write_hashes(
+            &(hash_file, hash_file_path),
+            Algorithm::CRC64,
+            self.hashsums.clone(),
+        );
 
         // retrieve old checksums
-        let old_hash_file_path = PathBuf::from(self.conf.output_dir.as_ref().unwrap())
-            .join(OLD_CRC_FILE_NAME);
-        self.ftp_stream
-            .transfer_type(FileType::Binary)
-            .expect("FTP couldn't switch to binary mode.");
+        let old_hash_file_path =
+            PathBuf::from(self.conf.output_dir.as_ref().unwrap()).join(OLD_CRC_FILE_NAME);
+        self.ftp_stream.transfer_type(FileType::Binary).expect(
+            "FTP couldn't switch to binary mode.",
+        );
         match self.ftp_stream
             .retr(CRC_FILE_NAME, |stream| {
                 let mut buf = Vec::new();
-                let mut f = File::create(old_hash_file_path.as_path())
-                    .expect(format!("Couldn't create file '{}'.", OLD_CRC_FILE_NAME).as_str());
-                stream.read_to_end(&mut buf)
-                    .map(|_| f.write_all(buf.as_slice()).expect("Couldn't write hashsums file."))
+                let mut f = File::create(old_hash_file_path.as_path()).expect(
+                    format!(
+                        "Couldn't create file '{}'.",
+                        OLD_CRC_FILE_NAME
+                    ).as_str(),
+                );
+                stream
+                    .read_to_end(&mut buf)
+                    .map(|_| {
+                        f.write_all(buf.as_slice()).expect(
+                            "Couldn't write hashsums file.",
+                        )
+                    })
                     .map_err(FtpError::ConnectionError)
             })
             .and_then(|_| {
                 // load old checksums
-                let old_hash_file = old_hash_file_path.clone()
+                let old_hash_file = old_hash_file_path
+                    .clone()
                     .into_os_string()
                     .into_string()
                     .expect("old hash file could not be determined");
-                ops::read_hashes(&mut stderr(), &(old_hash_file, old_hash_file_path))
-                    .map_err(|e| {
-                        FtpError::ConnectionError(io::Error::new(io::ErrorKind::Other,
-                                                                 format!("old hash file could \
+                ops::read_hashes(&mut stderr(), &(old_hash_file, old_hash_file_path)).map_err(|e| {
+                    FtpError::ConnectionError(io::Error::new(
+                        io::ErrorKind::Other,
+                        format!(
+                            "old hash file could \
                                                                           not be read: {:?}",
-                                                                         e)))
-                    })
+                            e
+                        ),
+                    ))
+                })
             })
             .and_then(|old_hashsums| {
                 let _ = fs::remove_file(self.output_path.join(OLD_CRC_FILE_NAME).as_path());
                 // compare checksums
                 ops::compare_hashes(CRC_FILE_NAME, self.hashsums.clone(), old_hashsums)
                     .map_err(|e| {
-                        FtpError::ConnectionError(io::Error::new(io::ErrorKind::Other,
-                                                                 format!("Couldn't compare hash \
+                        FtpError::ConnectionError(io::Error::new(
+                            io::ErrorKind::Other,
+                            format!(
+                                "Couldn't compare hash \
                                                                           files: {:?}",
-                                                                         e)))
+                                e
+                            ),
+                        ))
                     })
             }) {
             Ok((compare_result, compare_file_result)) => {
@@ -165,8 +193,15 @@ impl<'a> Synchronizer<'a> {
     }
 
     pub fn push_all_files(&mut self) {
-        println!("Push all files to FTP server {}",
-                 self.conf.sync_settings.as_ref().unwrap().ftp_server.as_str());
+        println!(
+            "Push all files to FTP server {}",
+            self.conf
+                .sync_settings
+                .as_ref()
+                .unwrap()
+                .ftp_server
+                .as_str()
+        );
         let walker = WalkDir::new(self.output_path.as_path())
             .min_depth(1)
             .into_iter();
@@ -181,29 +216,43 @@ impl<'a> Synchronizer<'a> {
     }
 
     fn create_and_change_to_directory(&mut self, src_dir: &Path) {
-        self.ftp_stream.cwd("/").expect("Couldn't change to root dir");
+        self.ftp_stream.cwd("/").expect(
+            "Couldn't change to root dir",
+        );
         for comp in src_dir.components().skip(self.output_path_offset) {
-            let dir = comp.as_ref()
-                .to_str()
-                .expect(format!("Couldn't convert component '{:?}' to string.", comp).as_ref());
+            let dir =
+                comp.as_ref().to_str().expect(
+                    format!("Couldn't convert component '{:?}' to string.", comp)
+                        .as_ref(),
+                );
             if self.ftp_stream.cwd(dir).is_err() {
                 println!("Creating '{}'", dir);
-                self.ftp_stream
-                    .mkdir(dir)
-                    .expect(format!("Couldn't create dir '{}'", &dir).as_ref());
-                self.ftp_stream
-                    .cwd(dir)
-                    .expect(format!("Couldn't change to dir '{}'", &dir).as_ref());
+                self.ftp_stream.mkdir(dir).expect(
+                    format!(
+                        "Couldn't create dir '{}'",
+                        &dir
+                    ).as_ref(),
+                );
+                self.ftp_stream.cwd(dir).expect(
+                    format!(
+                        "Couldn't change to dir '{}'",
+                        &dir
+                    ).as_ref(),
+                );
             }
         }
     }
 
     fn remove_directory(&mut self, src_dir: &Path) {
-        self.ftp_stream.cwd("/").expect("Couldn't change to root dir");
+        self.ftp_stream.cwd("/").expect(
+            "Couldn't change to root dir",
+        );
         for comp in src_dir.components().skip(self.output_path_offset) {
-            let dir = comp.as_ref()
-                .to_str()
-                .expect(format!("Couldn't convert component '{:?}' to string.", comp).as_ref());
+            let dir =
+                comp.as_ref().to_str().expect(
+                    format!("Couldn't convert component '{:?}' to string.", comp)
+                        .as_ref(),
+                );
             if self.ftp_stream.cwd(dir).is_err() {
                 println!("Couldn't change to '{}'", dir);
                 return;
@@ -219,17 +268,21 @@ impl<'a> Synchronizer<'a> {
     }
 
     fn remove_file(&mut self, src_dir: &Path) {
-        self.ftp_stream.cwd("/").expect("Couldn't change to root dir");
+        self.ftp_stream.cwd("/").expect(
+            "Couldn't change to root dir",
+        );
         for comp in src_dir.components().skip(self.output_path_offset) {
-            let dir = comp.as_ref()
-                .to_str()
-                .expect(format!("Couldn't convert component '{:?}' to string.", comp).as_ref());
+            let dir =
+                comp.as_ref().to_str().expect(
+                    format!("Couldn't convert component '{:?}' to string.", comp)
+                        .as_ref(),
+                );
             let _ = self.ftp_stream.cwd(dir);
         }
         let comp = src_dir.components().last().unwrap();
-        self.ftp_stream
-            .rm(comp.as_ref().to_str().unwrap())
-            .expect(format!("Couldn't remove file '{:?}'", &comp).as_ref());
+        self.ftp_stream.rm(comp.as_ref().to_str().unwrap()).expect(
+            format!("Couldn't remove file '{:?}'", &comp).as_ref(),
+        );
     }
 
     fn push_file(&mut self, src_path: &Path) {
@@ -238,11 +291,15 @@ impl<'a> Synchronizer<'a> {
         File::open(src_path)
             .and_then(|mut f| {
                 self.ftp_stream.put(file_name, &mut f).map_err(|e| {
-                    io::Error::new(io::ErrorKind::Other,
-                                   format!("Error during ftp put operation: {:?}", e).as_ref())
+                    io::Error::new(
+                        io::ErrorKind::Other,
+                        format!("Error during ftp put operation: {:?}", e).as_ref(),
+                    )
                 })
             })
-            .expect(format!("Couldn't push file '{}' to ftp server", file_name).as_ref());
+            .expect(
+                format!("Couldn't push file '{}' to ftp server", file_name).as_ref(),
+            );
     }
 }
 

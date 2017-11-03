@@ -1,23 +1,23 @@
 [package]
 name = "neptungen"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["Philipp Degler <deglerp@googlemail.com>"]
 
 [[bin]]
 name = "neptungen"
 
 [dependencies]
-error-chain = "0.10"
+error-chain = "0.11"
 serde = "1.0"
 serde_derive = "1.0"
 toml = "0.4"
-clap = "2.26"
-walkdir = "1.0"
-pulldown-cmark = "0.0.15"
+clap = "2.27"
+walkdir = "2.0"
+pulldown-cmark = "0.1"
 liquid = "0.10"
-image = "0.15"
+image = "0.17"
 ftp = "2.2"
 checksums = "0.5"
 term-painter = "0.2"
-rpassword = "1.0"
+rpassword = "2.0"
 rayon = "0.8"

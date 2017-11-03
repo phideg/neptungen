@@ -13,9 +13,11 @@ fn load_template(name: &str, conf: &Config) -> Option<String> {
         match File::open(path_buf.as_path()).and_then(|mut f| f.read_to_string(&mut template)) {
             Ok(_) => template,
             Err(error) => {
-                panic!("failed to open page template {}: {}",
-                       path_buf.display(),
-                       error)
+                panic!(
+                    "failed to open page template {}: {}",
+                    path_buf.display(),
+                    error
+                )
             }
         }
     })
