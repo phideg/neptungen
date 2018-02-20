@@ -166,7 +166,7 @@ fn prepare_site_structure(path: &Path, target_path: &Path) -> Vec<liquid::Value>
         );
         nav_entry.insert(
             "level_depth".to_owned(),
-            liquid::Value::scalar(level_depth as f32),
+            liquid::Value::scalar(level_depth as i32),
         );
         nav_entries.push(liquid::Value::Object(nav_entry));
         prev_depth = entry.depth();
