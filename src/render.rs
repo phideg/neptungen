@@ -65,9 +65,9 @@ fn build_page(nav_items: Vec<liquid::Value>, entry: &DirEntry, target_dir: &Path
     let page_content = convert_markdown_to_html(entry.path());
     let html = if entry.file_name() == "gallery.md" {
         let images = prepare_gallery(entry, target_dir, conf);
-        apply_gallery_template(page_content, nav_items, images, entry.depth(), conf)
+        apply_gallery_template(&page_content, nav_items, images, entry.depth(), conf)
     } else {
-        apply_page_template(page_content, nav_items, entry.depth(), conf)
+        apply_page_template(&page_content, nav_items, entry.depth(), conf)
     };
     write_html_file(&html, target_dir, entry);
     copy_images(entry.path().parent().unwrap(), target_dir);
@@ -264,7 +264,7 @@ fn prepare_gallery(
 }
 
 fn apply_gallery_template(
-    content: String,
+    content: &str,
     nav_items: Vec<liquid::Value>,
     images: Vec<liquid::Value>,
     depth: usize,
@@ -294,14 +294,14 @@ fn apply_gallery_template(
         liquid::Value::scalar(content.to_owned()),
     );
     context.insert("images".to_owned(), liquid::Value::Array(images));
-    match template.render(&mut context) {
+    match template.render(&context) {
         Ok(output) => output,
         Err(error) => panic!("Could not render Page template: {}", error),
     }
 }
 
 fn apply_page_template(
-    content: String,
+    content: &str,
     nav_items: Vec<liquid::Value>,
     depth: usize,
     conf: &Config,
@@ -329,7 +329,7 @@ fn apply_page_template(
         "content".to_owned(),
         liquid::Value::scalar(content.to_owned()),
     );
-    match template.render(&mut context) {
+    match template.render(&context) {
         Ok(output) => output,
         Err(error) => panic!("Could not render Page template: {}", error),
     }
