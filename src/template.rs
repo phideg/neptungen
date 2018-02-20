@@ -3,7 +3,6 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 use config::Config;
 
-
 fn load_template(name: &str, conf: &Config) -> Option<String> {
     conf.template_dir.as_ref().map(|template_dir| {
         let mut template = String::new();
@@ -12,19 +11,18 @@ fn load_template(name: &str, conf: &Config) -> Option<String> {
         path_buf.push(name);
         match File::open(path_buf.as_path()).and_then(|mut f| f.read_to_string(&mut template)) {
             Ok(_) => template,
-            Err(error) => {
-                panic!(
-                    "failed to open page template {}: {}",
-                    path_buf.display(),
-                    error
-                )
-            }
+            Err(error) => panic!(
+                "failed to open page template {}: {}",
+                path_buf.display(),
+                error
+            ),
         }
     })
 }
 
 pub fn load_page_template(conf: &Config) -> String {
-    load_template("page.liq", conf).unwrap_or_else(|| r#"
+    load_template("page.liq", conf).unwrap_or_else(|| {
+        r#"
 <!DOCTYPE html>
 <html>
 <head>
@@ -121,11 +119,13 @@ html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif}
 
 </body>
 </html>
-    "#.to_owned())
+    "#.to_owned()
+    })
 }
 
 pub fn load_gallery_template(conf: &Config) -> String {
-    load_template("gallery.liq", conf).unwrap_or_else(|| r#"
+    load_template("gallery.liq", conf).unwrap_or_else(|| {
+        r#"
 <!DOCTYPE html>
 <html>
 <head>
@@ -179,7 +179,7 @@ html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif}
     <div class="w3-row w3-padding-64">
         <div class="w3-twothird w3-container">
             {{ content }}
-            <p>Click on the image to show enlarge</p>                   
+            <p>Click on the image to show enlarge</p>
             {% for image in images %}
             <a class="zoom" rel="group" href="{{image.name}}">
                <img src="{{image.thumb}}" />
@@ -223,11 +223,11 @@ html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif}
         function w3_close() {
             mySidenav.style.display = "none";
             overlayBg.style.display = "none";
-        }    
+        }
     </script>
 
 </body>
 </html>
     "#.to_owned()
-    )
+    })
 }

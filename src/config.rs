@@ -53,16 +53,16 @@ impl Config {
         File::open(path.join("config.toml").as_path())
             .and_then(|mut f| f.read_to_string(&mut input))
             .chain_err(|| "couldn't find or read file 'config.toml'")?;
-        let mut conf = toml::from_str::<Config>(input.as_str()).chain_err(
-            || "parsing 'config.toml' failed",
-        )?;
+        let mut conf =
+            toml::from_str::<Config>(input.as_str()).chain_err(|| "parsing 'config.toml' failed")?;
         conf.resolve_paths(path);
         Ok(conf)
     }
     pub fn resolve_paths(&mut self, base_path: &Path) {
-        let output_path = base_path.join(&self.output_dir.as_ref().map(|d| d.as_str()).unwrap_or(
-            OUTPUT_FOLDER_NAME,
-        ));
+        let output_path = base_path.join(&self.output_dir
+            .as_ref()
+            .map(|d| d.as_str())
+            .unwrap_or(OUTPUT_FOLDER_NAME));
         self.output_dir = Some(
             output_path
                 .as_path()
@@ -131,9 +131,9 @@ impl Config {
         );
         println!(
             "Output directory : {}",
-            self.output_dir.as_ref().unwrap_or(
-                &OUTPUT_FOLDER_NAME.to_string(),
-            )
+            self.output_dir
+                .as_ref()
+                .unwrap_or(&OUTPUT_FOLDER_NAME.to_string(),)
         );
         println!("{}", Bold.paint("SyncSettings"));
         if self.sync_settings.is_some() {
@@ -155,13 +155,11 @@ impl Config {
             );
             println!(
                 "  image size : {} x {}",
-                gallery.img_width,
-                gallery.img_height
+                gallery.img_width, gallery.img_height
             );
             println!(
                 "  thumb size : {} x {}",
-                gallery.thumb_width,
-                gallery.thumb_height
+                gallery.thumb_width, gallery.thumb_height
             );
         }
     }

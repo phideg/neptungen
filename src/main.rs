@@ -1,19 +1,19 @@
-#[macro_use]
-extern crate error_chain;
-#[macro_use]
-extern crate serde_derive;
+extern crate checksums;
 #[macro_use]
 extern crate clap;
+#[macro_use]
+extern crate error_chain;
+extern crate ftp;
+extern crate image;
+extern crate liquid;
+extern crate pulldown_cmark;
+extern crate rayon;
+extern crate rpassword;
+#[macro_use]
+extern crate serde_derive;
+extern crate term_painter;
 extern crate toml;
 extern crate walkdir;
-extern crate pulldown_cmark;
-extern crate liquid;
-extern crate image;
-extern crate ftp;
-extern crate checksums;
-extern crate term_painter;
-extern crate rpassword;
-extern crate rayon;
 
 mod config;
 mod render;
@@ -60,9 +60,10 @@ fn main() {
                 .multiple(false)
                 .takes_value(true),
         )
-        .subcommand(SubCommand::with_name("print-config").about(
-            "Prints the configuration of the config.toml file",
-        ))
+        .subcommand(
+            SubCommand::with_name("print-config")
+                .about("Prints the configuration of the config.toml file"),
+        )
         .subcommand(SubCommand::with_name("build").about("Generate the website"))
         .subcommand(
             SubCommand::with_name("sync")
@@ -89,9 +90,8 @@ fn main() {
         fs::canonicalize(matches.value_of("project_path").unwrap_or("."))
             .expect("could not determine path")
     } else {
-        std::env::current_dir().unwrap_or_else(|_| {
-            fs::canonicalize(".").expect("could not determine path")
-        })
+        std::env::current_dir()
+            .unwrap_or_else(|_| fs::canonicalize(".").expect("could not determine path"))
     };
 
     // load configuration from config.toml if present
@@ -104,20 +104,18 @@ fn main() {
     };
 
     match matches.subcommand() {
-        ("show_config", Some(_)) => {
+        ("print-config", Some(_)) => {
             conf.print();
         }
         ("build", Some(_)) => {
             build(path.as_path(), &conf);
         }
-        ("sync", Some(matches)) => {
-            sync(
-                path.as_path(),
-                &conf,
-                matches.is_present("with_build"),
-                matches.is_present("overwrite"),
-            )
-        }
+        ("sync", Some(matches)) => sync(
+            path.as_path(),
+            &conf,
+            matches.is_present("with_build"),
+            matches.is_present("overwrite"),
+        ),
         _ => {
             println!("{}", matches.usage());
         }

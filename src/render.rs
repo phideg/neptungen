@@ -8,15 +8,14 @@ use std::path::{Path, PathBuf};
 use std::fmt::{self, Debug};
 use walkdir::{DirEntry, WalkDir};
 use liquid;
-use liquid::{Renderable, Context, Value};
 use config::Config;
-use pulldown_cmark::{Parser, html, Options};
+use pulldown_cmark::{html, Options, Parser};
 use template;
 use image;
 use errors::*;
 use rayon::prelude::*;
-use filter::{is_markdown, is_hidden, is_directory, is_image, contains_markdown_file,
-             contains_markdown_subdir};
+use filter::{contains_markdown_file, contains_markdown_subdir, is_directory, is_hidden, is_image,
+             is_markdown};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MenuCmd {
@@ -47,9 +46,11 @@ pub fn build(path: &Path, conf: &Config) -> Result<()> {
         let src = e.as_ref().unwrap();
         let mut target_dir = output_dir.clone();
         if src.path().parent().is_some() {
-            for comp in src.path().parent().unwrap().components().skip(
-                path_comps.len(),
-            )
+            for comp in src.path()
+                .parent()
+                .unwrap()
+                .components()
+                .skip(path_comps.len())
             {
                 target_dir.push(comp.as_os_str());
             }
@@ -60,7 +61,7 @@ pub fn build(path: &Path, conf: &Config) -> Result<()> {
     Ok(())
 }
 
-fn build_page(nav_items: Vec<Value>, entry: &DirEntry, target_dir: &Path, conf: &Config) {
+fn build_page(nav_items: Vec<liquid::Value>, entry: &DirEntry, target_dir: &Path, conf: &Config) {
     let page_content = convert_markdown_to_html(entry.path());
     let html = if entry.file_name() == "gallery.md" {
         let images = prepare_gallery(entry, target_dir, conf);
@@ -85,19 +86,16 @@ fn copy_dirs(path: &Path, target_path: &Path, conf: &Config) {
                 for comp in entry.path().components().skip(path_comps.len()) {
                     target_file.push(comp.as_os_str());
                 }
-                match DirBuilder::new().recursive(true).create(
-                    target_file.parent().expect("Missing parent folder!"),
-                ) {
+                match DirBuilder::new()
+                    .recursive(true)
+                    .create(target_file.parent().expect("Missing parent folder!"))
+                {
                     Ok(_) => {}
                     Err(e) => println!("{}", e),
                 }
                 if !target_file.exists() {
-                    fs::copy(entry.path(), target_file).expect(
-                        format!(
-                            "error during copy of {:?}",
-                            copy_dir
-                        ).as_ref(),
-                    );
+                    fs::copy(entry.path(), target_file)
+                        .expect(format!("error during copy of {:?}", copy_dir).as_ref());
                 }
             }
         }
@@ -115,32 +113,30 @@ fn copy_images(source: &Path, target: &Path) {
         let entry = entry.unwrap();
         target_file.push(entry.path().file_name().unwrap());
         if !target_file.exists() {
-            fs::copy(entry.path(), target_file.as_path()).expect(
-                format!(
-                    "Error during copy of {:?}",
-                    entry.path().display()
-                ).as_ref(),
-            );
+            fs::copy(entry.path(), target_file.as_path())
+                .expect(format!("Error during copy of {:?}", entry.path().display()).as_ref());
         }
     }
 }
 
-fn prepare_site_structure(path: &Path, target_path: &Path) -> Vec<Value> {
-    let mut nav_entries = Vec::<Value>::new();
+fn prepare_site_structure(path: &Path, target_path: &Path) -> Vec<liquid::Value> {
+    let mut nav_entries = Vec::<liquid::Value>::new();
     let walker = WalkDir::new(path)
         .min_depth(1)
         .sort_by(|a, b| a.file_name().cmp(b.file_name()))
         .into_iter();
     let mut prev_depth = 1;
     let path_comps = path.components().collect::<Vec<_>>();
-    for entry in walker.filter_entry(|e| {
-        is_hidden(e) && is_directory(e) && contains_markdown_file(e)
-    })
+    for entry in
+        walker.filter_entry(|e| is_hidden(e) && is_directory(e) && contains_markdown_file(e))
     {
         let entry = entry.expect("Reading directory entry failed");
-        let name = String::from(entry.file_name().to_str().expect(
-            "Failed to read navigation entries",
-        ));
+        let name = String::from(
+            entry
+                .file_name()
+                .to_str()
+                .expect("Failed to read navigation entries"),
+        );
         let mut url = PathBuf::new();
         for comp in entry.path().components().skip(path_comps.len()) {
             url.push(comp.as_os_str());
@@ -152,10 +148,10 @@ fn prepare_site_structure(path: &Path, target_path: &Path) -> Vec<Value> {
         }
         url.push("index.html");
         let mut nav_entry = HashMap::new();
-        nav_entry.insert("name".to_owned(), Value::Str(name));
+        nav_entry.insert("name".to_owned(), liquid::Value::scalar(name));
         nav_entry.insert(
             "url".to_owned(),
-            Value::Str(url.as_os_str().to_str().unwrap().to_owned()),
+            liquid::Value::scalar(url.as_os_str().to_str().unwrap().to_owned()),
         );
         let (menu_cmd, level_depth) =
             match (contains_markdown_subdir(&entry), prev_depth > entry.depth()) {
@@ -166,18 +162,25 @@ fn prepare_site_structure(path: &Path, target_path: &Path) -> Vec<Value> {
             };
         nav_entry.insert(
             "menu_cmd".to_owned(),
-            Value::Str(menu_cmd.to_string().to_owned()),
+            liquid::Value::scalar(menu_cmd.to_string().to_owned()),
         );
-        nav_entry.insert("level_depth".to_owned(), Value::Num(level_depth as f32));
-        nav_entries.push(Value::Object(nav_entry));
+        nav_entry.insert(
+            "level_depth".to_owned(),
+            liquid::Value::scalar(level_depth as f32),
+        );
+        nav_entries.push(liquid::Value::Object(nav_entry));
         prev_depth = entry.depth();
     }
     nav_entries
 }
 
-fn prepare_gallery(source_entry: &DirEntry, target_path: &Path, conf: &Config) -> Vec<Value> {
+fn prepare_gallery(
+    source_entry: &DirEntry,
+    target_path: &Path,
+    conf: &Config,
+) -> Vec<liquid::Value> {
     let gallery_settings = conf.gallery.as_ref().unwrap();
-    let mut images = Vec::<Value>::new();
+    let mut images = Vec::<liquid::Value>::new();
     let img_dir = gallery_settings.img_dir.as_ref().unwrap();
     let target_dir = target_path.join(img_dir.as_str());
     match DirBuilder::new().recursive(true).create(&target_dir) {
@@ -201,7 +204,7 @@ fn prepare_gallery(source_entry: &DirEntry, target_path: &Path, conf: &Config) -
         let mut img = image::open(entry.path()).expect(
             format!(
                 "Resize of '{}' failed: The gallery folder should only contain \
-                             images!",
+                 images!",
                 entry.path().display()
             ).as_ref(),
         );
@@ -219,10 +222,8 @@ fn prepare_gallery(source_entry: &DirEntry, target_path: &Path, conf: &Config) -
                 gallery_settings.img_height,
                 image::FilterType::Nearest,
             );
-            img.save(fout, image::PNG).expect(
-                format!("Saving image '{}' failed", image_path.display())
-                    .as_ref(),
-            );
+            img.save(fout, image::PNG)
+                .expect(format!("Saving image '{}' failed", image_path.display()).as_ref());
         }
 
         let mut thumb_path = PathBuf::from(&target_dir);
@@ -244,102 +245,92 @@ fn prepare_gallery(source_entry: &DirEntry, target_path: &Path, conf: &Config) -
                 gallery_settings.thumb_height,
                 image::FilterType::Nearest,
             );
-            img.save(fout, image::PNG).expect(
-                format!(
-                    "Saving thumb image '{}' failed",
-                    thumb_path.display()
-                ).as_ref(),
-            );
+            img.save(fout, image::PNG)
+                .expect(format!("Saving thumb image '{}' failed", thumb_path.display()).as_ref());
         }
 
         let mut image_entry = HashMap::new();
         image_entry.insert(
             "name".to_owned(),
-            Value::Str(rel_image_path.to_str().unwrap().to_owned()),
+            liquid::Value::scalar(rel_image_path.to_str().unwrap().to_owned()),
         );
         image_entry.insert(
             "thumb".to_owned(),
-            Value::Str(rel_thumb_path.to_str().unwrap().to_owned()),
+            liquid::Value::scalar(rel_thumb_path.to_str().unwrap().to_owned()),
         );
-        images.push(Value::Object(image_entry));
+        images.push(liquid::Value::Object(image_entry));
     }
     images
 }
 
 fn apply_gallery_template(
     content: String,
-    nav_items: Vec<Value>,
-    images: Vec<Value>,
+    nav_items: Vec<liquid::Value>,
+    images: Vec<liquid::Value>,
     depth: usize,
     conf: &Config,
 ) -> String {
-    let template = liquid::parse(
-        template::load_gallery_template(conf).as_str(),
-        Default::default(),
-    ).expect("Gallery template could not be parsed!");
+    let template = liquid::ParserBuilder::with_liquid()
+        .build()
+        .parse(template::load_gallery_template(conf).as_str())
+        .expect("Gallery template could not be parsed!");
     let mut root_dir = String::new();
     for _ in 1..depth {
         root_dir.push_str("../");
     }
-    let mut context = Context::new();
-    context.set_val("root_dir", Value::Str(root_dir));
-    context.set_val(
-        "title",
-        Value::Str(if conf.title.is_some() {
+    let mut context = liquid::Object::new();
+    context.insert("root_dir".to_owned(), liquid::Value::scalar(root_dir));
+    context.insert(
+        "title".to_owned(),
+        liquid::Value::scalar(if conf.title.is_some() {
             conf.title.as_ref().unwrap().clone()
         } else {
             "None".to_string()
         }),
     );
-    context.set_val("nav_items", Value::Array(nav_items));
-    context.set_val("content", Value::Str(content.to_owned()));
-    context.set_val("images", Value::Array(images));
+    context.insert("nav_items".to_owned(), liquid::Value::Array(nav_items));
+    context.insert(
+        "content".to_owned(),
+        liquid::Value::scalar(content.to_owned()),
+    );
+    context.insert("images".to_owned(), liquid::Value::Array(images));
     match template.render(&mut context) {
-        Ok(output) => {
-            if output.is_some() {
-                output.unwrap()
-            } else {
-                content
-            }
-        }
+        Ok(output) => output,
         Err(error) => panic!("Could not render Page template: {}", error),
     }
 }
 
 fn apply_page_template(
     content: String,
-    nav_items: Vec<Value>,
+    nav_items: Vec<liquid::Value>,
     depth: usize,
     conf: &Config,
 ) -> String {
-    let template = liquid::parse(
-        template::load_page_template(conf).as_str(),
-        Default::default(),
-    ).expect("Page template could not be parsed!");
+    let template = liquid::ParserBuilder::with_liquid()
+        .build()
+        .parse(template::load_page_template(conf).as_str())
+        .expect("Page template could not be parsed!");
     let mut root_dir = String::new();
     for _ in 1..depth {
         root_dir.push_str("../");
     }
-    let mut context = Context::new();
-    context.set_val("root_dir", Value::Str(root_dir));
-    context.set_val(
-        "title",
-        Value::Str(if conf.title.is_some() {
+    let mut context = liquid::Object::new();
+    context.insert("root_dir".to_owned(), liquid::Value::scalar(root_dir));
+    context.insert(
+        "title".to_owned(),
+        liquid::Value::scalar(if conf.title.is_some() {
             conf.title.as_ref().unwrap().clone()
         } else {
             "None".to_string()
         }),
     );
-    context.set_val("nav_items", Value::Array(nav_items));
-    context.set_val("content", Value::Str(content.to_owned()));
+    context.insert("nav_items".to_owned(), liquid::Value::Array(nav_items));
+    context.insert(
+        "content".to_owned(),
+        liquid::Value::scalar(content.to_owned()),
+    );
     match template.render(&mut context) {
-        Ok(output) => {
-            if output.is_some() {
-                output.unwrap()
-            } else {
-                content
-            }
-        }
+        Ok(output) => output,
         Err(error) => panic!("Could not render Page template: {}", error),
     }
 }
@@ -349,12 +340,10 @@ fn convert_markdown_to_html(entry: &Path) -> String {
     let mut html_output = String::new();
     match File::open(entry).and_then(|mut f| f.read_to_string(&mut markdown)) {
         Err(error) => panic!("failed to open {}: {}", entry.display(), error),
-        Ok(_) => {
-            html::push_html(
-                &mut html_output,
-                Parser::new_ext(markdown.as_str(), Options::empty()),
-            )
-        }
+        Ok(_) => html::push_html(
+            &mut html_output,
+            Parser::new_ext(markdown.as_str(), Options::empty()),
+        ),
     }
     html_output
 }
