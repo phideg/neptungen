@@ -70,7 +70,7 @@ impl Config {
                 .expect("Could not resolve path to template directory")
                 .to_owned(),
         );
-        if !self.gallery.is_some() {
+        if self.gallery.is_none() {
             self.gallery = Some(Gallery {
                 img_dir: Some(GALLERY_FOLDER_NAME.to_string()),
                 img_width: 600,

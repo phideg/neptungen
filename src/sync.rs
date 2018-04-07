@@ -36,7 +36,7 @@ impl<'a> Synchronizer<'a> {
         let output_path_comps = output_path.as_path().components().collect::<Vec<_>>();
         let ftp_stream = Synchronizer::ftp_login(conf);
         Synchronizer {
-            conf: conf,
+            conf,
             hashsums: ops::create_hashes(
                 output_path.as_path(),
                 BTreeSet::new(),
@@ -49,7 +49,7 @@ impl<'a> Synchronizer<'a> {
             ),
             output_path: output_path.clone(),
             output_path_offset: output_path_comps.len(),
-            ftp_stream: ftp_stream,
+            ftp_stream,
         }
     }
 
