@@ -1,6 +1,6 @@
 [package]
 name = "neptungen"
-version = "0.4.2"
+version = "0.4.3"
 authors = ["Philipp Degler <deglerp@googlemail.com>"]
 
 [[bin]]
@@ -16,7 +16,7 @@ walkdir = "2"
 pulldown-cmark = "0.1"
 liquid = "0.14"
 image = "0.18"
-ftp = "2"
+ftp = "3"
 checksums = "0.5"
 term-painter = "0.2"
 rpassword = "2"
