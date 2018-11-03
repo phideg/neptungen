@@ -1,4 +1,4 @@
-use config::Config;
+use crate::config::Config;
 use std::io;
 use std::io::prelude::*;
 use std::io::{stderr, stdout};
@@ -13,7 +13,7 @@ use checksums::ops;
 use checksums::ops::{CompareFileResult, CompareResult};
 use checksums::Algorithm;
 use walkdir::WalkDir;
-use filter;
+use crate::filter;
 use rpassword;
 
 static CRC_FILE_NAME: &'static str = "hashsums.crc";

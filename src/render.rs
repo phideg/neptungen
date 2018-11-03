@@ -8,13 +8,13 @@ use std::path::{Path, PathBuf};
 use std::fmt::{self, Debug};
 use walkdir::{DirEntry, WalkDir};
 use liquid;
-use config::Config;
+use crate::config::Config;
 use pulldown_cmark::{html, Options, Parser};
-use template;
+use crate::template;
 use image;
-use errors::*;
+use crate::errors::*;
 use rayon::prelude::*;
-use filter::{contains_markdown_file, contains_markdown_subdir, is_directory, is_hidden, is_image,
+use crate::filter::{contains_markdown_file, contains_markdown_subdir, is_directory, is_hidden, is_image,
              is_markdown};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]

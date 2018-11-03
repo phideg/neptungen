@@ -1,7 +1,7 @@
 use std::path::Path;
 use toml;
-use errors::Error;
-use errors::ResultExt;
+use crate::errors::Error;
+use crate::errors::ResultExt;
 
 static GALLERY_FOLDER_NAME: &'static str = "images";
 static OUTPUT_FOLDER_NAME: &'static str = "_output";

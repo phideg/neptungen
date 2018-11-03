@@ -25,8 +25,8 @@ mod errors;
 use std::fs;
 use std::path::Path;
 use clap::{App, Arg, SubCommand};
-use config::Config;
-use sync::Synchronizer;
+use crate::config::Config;
+use crate::sync::Synchronizer;
 
 fn build(path: &Path, conf: &Config) {
     if let Err(ref e) = render::build(path, conf) {
