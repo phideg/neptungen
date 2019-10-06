@@ -1,23 +1,23 @@
 use crate::config::Config;
-use std::io;
-use std::io::prelude::*;
-use std::io::{stderr, stdout};
-use std::fs;
-use std::fs::File;
-use std::path::{Path, PathBuf};
-use std::collections::{BTreeMap, BTreeSet};
-use ftp::FtpStream;
-use ftp::types::FileType;
-use ftp::FtpError;
+use crate::filter;
 use checksums::ops;
 use checksums::ops::{CompareFileResult, CompareResult};
 use checksums::Algorithm;
-use walkdir::WalkDir;
-use crate::filter;
+use ftp::types::FileType;
+use ftp::FtpError;
+use ftp::FtpStream;
 use rpassword;
+use std::collections::{BTreeMap, BTreeSet};
+use std::fs;
+use std::fs::File;
+use std::io;
+use std::io::prelude::*;
+use std::io::{stderr, stdout};
+use std::path::{Path, PathBuf};
+use walkdir::WalkDir;
 
-static CRC_FILE_NAME: &'static str = "hashsums.crc";
-static OLD_CRC_FILE_NAME: &'static str = "hashsums_old.crc";
+static CRC_FILE_NAME: &str = "hashsums.crc";
+static OLD_CRC_FILE_NAME: &str = "hashsums_old.crc";
 
 pub struct Synchronizer<'a> {
     conf: &'a Config,
@@ -95,7 +95,8 @@ impl<'a> Synchronizer<'a> {
         self.ftp_stream
             .transfer_type(FileType::Binary)
             .expect("FTP couldn't switch to binary mode.");
-        match self.ftp_stream
+        match self
+            .ftp_stream
             .retr(CRC_FILE_NAME, |stream| {
                 let mut buf = Vec::new();
                 let mut f = File::create(old_hash_file_path.as_path())
@@ -215,7 +216,8 @@ impl<'a> Synchronizer<'a> {
             .cwd("/")
             .expect("Couldn't change to root dir");
         for comp in src_dir.components().skip(self.output_path_offset) {
-            let dir = comp.as_os_str()
+            let dir = comp
+                .as_os_str()
                 .to_str()
                 .expect(format!("Couldn't convert component '{:?}' to string.", comp).as_ref());
             if self.ftp_stream.cwd(dir).is_err() {
@@ -235,7 +237,8 @@ impl<'a> Synchronizer<'a> {
             .cwd("/")
             .expect("Couldn't change to root dir");
         for comp in src_dir.components().skip(self.output_path_offset) {
-            let dir = comp.as_os_str()
+            let dir = comp
+                .as_os_str()
                 .to_str()
                 .expect(format!("Couldn't convert component '{:?}' to string.", comp).as_ref());
             if self.ftp_stream.cwd(dir).is_err() {
@@ -256,7 +259,8 @@ impl<'a> Synchronizer<'a> {
             .cwd("/")
             .expect("Couldn't change to root dir");
         for comp in src_dir.components().skip(self.output_path_offset) {
-            let dir = comp.as_os_str()
+            let dir = comp
+                .as_os_str()
                 .to_str()
                 .expect(format!("Couldn't convert component '{:?}' to string.", comp).as_ref());
             let _ = self.ftp_stream.cwd(dir);

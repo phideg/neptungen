@@ -1,10 +1,10 @@
-use std::path::Path;
-use toml;
 use crate::errors::Error;
 use crate::errors::ResultExt;
+use std::path::Path;
+use toml;
 
-static GALLERY_FOLDER_NAME: &'static str = "images";
-static OUTPUT_FOLDER_NAME: &'static str = "_output";
+static GALLERY_FOLDER_NAME: &str = "images";
+static OUTPUT_FOLDER_NAME: &str = "_output";
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -53,16 +53,19 @@ impl Config {
         File::open(path.join("config.toml").as_path())
             .and_then(|mut f| f.read_to_string(&mut input))
             .chain_err(|| "couldn't find or read file 'config.toml'")?;
-        let mut conf =
-            toml::from_str::<Config>(input.as_str()).chain_err(|| "parsing 'config.toml' failed")?;
+        let mut conf = toml::from_str::<Config>(input.as_str())
+            .chain_err(|| "parsing 'config.toml' failed")?;
         conf.resolve_paths(path);
         Ok(conf)
     }
     pub fn resolve_paths(&mut self, base_path: &Path) {
-        let output_path = base_path.join(&self.output_dir
-            .as_ref()
-            .map(|d| d.as_str())
-            .unwrap_or(OUTPUT_FOLDER_NAME));
+        let output_path = base_path.join(
+            &self
+                .output_dir
+                .as_ref()
+                .map(|d| d.as_str())
+                .unwrap_or(OUTPUT_FOLDER_NAME),
+        );
         self.output_dir = Some(
             output_path
                 .as_path()
@@ -121,8 +124,8 @@ impl Config {
     }
 
     pub fn print(&self) {
-        use term_painter::ToStyle;
         use term_painter::Attr::Bold;
+        use term_painter::ToStyle;
         let none_string = "None".to_string();
         println!("Title : {}", self.title.as_ref().unwrap_or(&none_string));
         println!(

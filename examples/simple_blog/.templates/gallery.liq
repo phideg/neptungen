@@ -34,7 +34,7 @@ html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif}
     </a>
     <h4><b>Menu</b></h4>
     {% for item in nav_items %}
-      {% if item.menu_cmd == "OpenLevel" %}
+      {% if item.menu_cmd == "OpenLevel" or item.menu_cmd == "CloseOpenLevel" %}
         <a href="#" class="w3-deep-orange">{{ item.name }}</a>
       {% else %}
         <a href="{{ root_dir }}{{ item.url }}" class="w3-hover-black">{{ item.name }}</a>
