@@ -16,17 +16,17 @@ extern crate toml;
 extern crate walkdir;
 
 mod config;
-mod render;
-mod template;
-mod sync;
-mod filter;
 mod errors;
+mod filter;
+mod render;
+mod sync;
+mod template;
 
-use std::fs;
-use std::path::Path;
-use clap::{App, Arg, SubCommand};
 use crate::config::Config;
 use crate::sync::Synchronizer;
+use clap::{App, Arg, SubCommand};
+use std::fs;
+use std::path::Path;
 
 fn build(path: &Path, conf: &Config) {
     if let Err(ref e) = render::build(path, conf) {

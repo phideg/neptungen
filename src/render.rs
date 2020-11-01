@@ -64,7 +64,7 @@ pub fn build(path: &Path, conf: &Config) -> Result<()> {
 }
 
 fn build_page(
-    nav_items: Vec<liquid::value::Value>,
+    nav_items: Vec<liquid::model::value::Value>,
     entry: &DirEntry,
     target_dir: &Path,
     conf: &Config,
@@ -126,8 +126,8 @@ fn copy_images(source: &Path, target: &Path) {
     }
 }
 
-fn prepare_site_structure(path: &Path, target_path: &Path) -> Vec<liquid::value::Value> {
-    let mut nav_entries = Vec::<liquid::value::Value>::new();
+fn prepare_site_structure(path: &Path, target_path: &Path) -> Vec<liquid::model::value::Value> {
+    let mut nav_entries = Vec::<liquid::model::value::Value>::new();
     let walker = WalkDir::new(path)
         .min_depth(1)
         .sort_by(|a, b| a.file_name().cmp(b.file_name()))
@@ -154,12 +154,6 @@ fn prepare_site_structure(path: &Path, target_path: &Path) -> Vec<liquid::value:
             Err(e) => println!("{}", e),
         }
         url.push("index.html");
-        let mut nav_entry = liquid::value::map::Map::new();
-        nav_entry.insert("name".into(), liquid::value::Value::scalar(name));
-        nav_entry.insert(
-            "url".into(),
-            liquid::value::Value::scalar(url.as_os_str().to_str().unwrap().to_owned()),
-        );
         let (menu_cmd, level_depth) =
             match (contains_markdown_subdir(&entry), prev_depth > entry.depth()) {
                 (true, true) => (MenuCmd::CloseOpenLevel, prev_depth - entry.depth()),
@@ -167,15 +161,13 @@ fn prepare_site_structure(path: &Path, target_path: &Path) -> Vec<liquid::value:
                 (false, true) => (MenuCmd::CloseLevel, prev_depth - entry.depth()),
                 _ => (MenuCmd::None, 0),
             };
-        nav_entry.insert(
-            "menu_cmd".into(),
-            liquid::value::Value::scalar(menu_cmd.to_string().to_owned()),
-        );
-        nav_entry.insert(
-            "level_depth".into(),
-            liquid::value::Value::scalar(level_depth as i32),
-        );
-        nav_entries.push(liquid::value::Value::Object(nav_entry));
+        let nav_entry = liquid::object!({
+            "name": name,
+            "url" : url.as_os_str().to_str().unwrap().to_owned(),
+            "menu_cmd" : menu_cmd.to_string().to_owned(),
+            "level_depth" : level_depth as i32,
+        });
+        nav_entries.push(liquid::model::value::Value::Object(nav_entry));
         prev_depth = entry.depth();
     }
     nav_entries
@@ -185,9 +177,9 @@ fn prepare_gallery(
     source_entry: &DirEntry,
     target_path: &Path,
     conf: &Config,
-) -> Vec<liquid::value::Value> {
+) -> Vec<liquid::model::value::Value> {
     let gallery_settings = conf.gallery.as_ref().unwrap();
-    let mut images = Vec::<liquid::value::Value>::new();
+    let mut images = Vec::<liquid::model::value::Value>::new();
     let img_dir = gallery_settings.img_dir.as_ref().unwrap();
     let target_dir = target_path.join(img_dir.as_str());
     match DirBuilder::new().recursive(true).create(&target_dir) {
@@ -229,9 +221,9 @@ fn prepare_gallery(
             img = img.resize(
                 gallery_settings.img_width,
                 gallery_settings.img_height,
-                image::FilterType::Nearest,
+                image::imageops::FilterType::Nearest,
             );
-            img.save_with_format(&image_path, image::PNG)
+            img.save_with_format(&image_path, image::ImageFormat::Png)
                 .expect(format!("Saving image '{}' failed", image_path.display()).as_ref());
         }
 
@@ -252,34 +244,29 @@ fn prepare_gallery(
             img = img.resize(
                 gallery_settings.thumb_width,
                 gallery_settings.thumb_height,
-                image::FilterType::Nearest,
+                image::imageops::FilterType::Nearest,
             );
-            img.save_with_format(&thumb_path, image::PNG)
+            img.save_with_format(&thumb_path, image::ImageFormat::Png)
                 .expect(format!("Saving thumb image '{}' failed", thumb_path.display()).as_ref());
         }
 
-        let mut image_entry = liquid::value::map::Map::new();
-        image_entry.insert(
-            "name".into(),
-            liquid::value::Value::scalar(rel_image_path.to_str().unwrap().to_owned()),
-        );
-        image_entry.insert(
-            "thumb".into(),
-            liquid::value::Value::scalar(rel_thumb_path.to_str().unwrap().to_owned()),
-        );
-        images.push(liquid::value::Value::Object(image_entry));
+        let image_entry = liquid::object!({
+            "name"  : rel_image_path.to_str().unwrap().to_owned(),
+            "thumb" : rel_thumb_path.to_str().unwrap().to_owned(),
+        });
+        images.push(liquid::model::value::Value::Object(image_entry));
     }
     images
 }
 
 fn apply_gallery_template(
     content: &str,
-    nav_items: Vec<liquid::value::Value>,
-    images: Vec<liquid::value::Value>,
+    nav_items: Vec<liquid::model::value::Value>,
+    images: Vec<liquid::model::value::Value>,
     depth: usize,
     conf: &Config,
 ) -> String {
-    let template = liquid::ParserBuilder::with_liquid()
+    let template = liquid::ParserBuilder::with_stdlib()
         .build()
         .unwrap()
         .parse(template::load_gallery_template(conf).as_str())
@@ -288,22 +275,28 @@ fn apply_gallery_template(
     for _ in 1..depth {
         root_dir.push_str("../");
     }
-    let mut context = liquid::value::Object::new();
-    context.insert("root_dir".into(), liquid::value::Value::scalar(root_dir));
+    let mut context = liquid::model::Object::new();
+    context.insert(
+        "root_dir".into(),
+        liquid::model::value::Value::scalar(root_dir),
+    );
     context.insert(
         "title".into(),
-        liquid::value::Value::scalar(if conf.title.is_some() {
+        liquid::model::value::Value::scalar(if conf.title.is_some() {
             conf.title.as_ref().unwrap().clone()
         } else {
             "None".to_string()
         }),
     );
-    context.insert("nav_items".into(), liquid::value::Value::Array(nav_items));
+    context.insert(
+        "nav_items".into(),
+        liquid::model::value::Value::Array(nav_items),
+    );
     context.insert(
         "content".into(),
-        liquid::value::Value::scalar(content.to_owned()),
+        liquid::model::value::Value::scalar(content.to_owned()),
     );
-    context.insert("images".into(), liquid::value::Value::Array(images));
+    context.insert("images".into(), liquid::model::value::Value::Array(images));
     match template.render(&context) {
         Ok(output) => output,
         Err(error) => panic!("Could not render Page template: {}", error),
@@ -312,11 +305,11 @@ fn apply_gallery_template(
 
 fn apply_page_template(
     content: &str,
-    nav_items: Vec<liquid::value::Value>,
+    nav_items: Vec<liquid::model::value::Value>,
     depth: usize,
     conf: &Config,
 ) -> String {
-    let template = liquid::ParserBuilder::with_liquid()
+    let template = liquid::ParserBuilder::with_stdlib()
         .build()
         .unwrap()
         .parse(template::load_page_template(conf).as_str())
@@ -325,21 +318,16 @@ fn apply_page_template(
     for _ in 1..depth {
         root_dir.push_str("../");
     }
-    let mut context = liquid::value::Object::new();
-    context.insert("root_dir".into(), liquid::value::Value::scalar(root_dir));
-    context.insert(
-        "title".into(),
-        liquid::value::Value::scalar(if conf.title.is_some() {
+    let context = liquid::object!({
+       "root_dir" : root_dir,
+       "title" : if conf.title.is_some() {
             conf.title.as_ref().unwrap().clone()
         } else {
             "None".to_string()
-        }),
-    );
-    context.insert("nav_items".into(), liquid::value::Value::Array(nav_items));
-    context.insert(
-        "content".into(),
-        liquid::value::Value::scalar(content.to_owned()),
-    );
+        },
+        "nav_items" : liquid::model::value::Value::Array(nav_items),
+        "content" : content.to_owned(),
+    });
     match template.render(&context) {
         Ok(output) => output,
         Err(error) => panic!("Could not render Page template: {}", error),
@@ -379,7 +367,3 @@ fn write_html_file(html: &str, target_dir: &Path, entry: &DirEntry) {
     }
     println!("written file {}", file_path.display());
 }
-
-// fn set_and_determine_last_generation(target_dir: &Path) -> i64 {
-
-// }

@@ -25,8 +25,12 @@ pub fn is_image(entry: &DirEntry) -> bool {
         .file_name()
         .to_str()
         .map(|f| {
-            f.ends_with(".jpg") || f.ends_with(".JPG") || f.ends_with(".png") || f.ends_with(".PNG")
-                || f.ends_with(".gif") || f.ends_with(".GIF")
+            f.ends_with(".jpg")
+                || f.ends_with(".JPG")
+                || f.ends_with(".png")
+                || f.ends_with(".PNG")
+                || f.ends_with(".gif")
+                || f.ends_with(".GIF")
         })
         .unwrap_or(false)
 }
@@ -42,7 +46,8 @@ pub fn contains_markdown_subdir(entry: &DirEntry) -> bool {
         .min_depth(1)
         .into_iter()
         .any(|e| {
-            e.is_ok() && is_directory(e.as_ref().unwrap())
+            e.is_ok()
+                && is_directory(e.as_ref().unwrap())
                 && contains_markdown_file(e.as_ref().unwrap())
         })
 }

@@ -1,7 +1,7 @@
+use crate::config::Config;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
-use crate::config::Config;
 
 fn load_template(name: &str, conf: &Config) -> Option<String> {
     conf.template_dir.as_ref().map(|template_dir| {

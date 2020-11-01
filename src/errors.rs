@@ -9,8 +9,8 @@ error_chain! {
 }
 
 pub fn print_message(e: &Error) {
-    use term_painter::ToStyle;
     use term_painter::Color::*;
+    use term_painter::ToStyle;
     println!("{}", Red.bold().paint(format!("error: {}", e)));
 
     for e in e.iter().skip(1) {
@@ -25,9 +25,9 @@ pub fn print_message(e: &Error) {
 }
 
 pub fn print_error(e: &Error) {
-    use term_painter::ToStyle;
-    use term_painter::Color::*;
     use std::io::Write;
+    use term_painter::Color::*;
+    use term_painter::ToStyle;
     let stderr = &mut ::std::io::stderr();
     let errmsg = "Error writing to standard out";
 
