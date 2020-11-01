@@ -43,12 +43,8 @@ jobs:
         toolchain: ${{ matrix.rust }}
         profile: minimal
         override: true        
-    - name: Show command used for Cargo
-      run: |
-        echo "cargo command is: ${{ env.CARGO }}"
-        echo "target flag is: ${{ env.TARGET_FLAGS }}"
-    - name: Build ripgrep and all crates
-      run: ${{ env.CARGO }} build --verbose --all ${{ env.TARGET_FLAGS }}
+    - name: Build neptungen and all crates
+      run: cargo build --verbose --all
 
   rustfmt:
     name: rustfmt
