@@ -29,11 +29,9 @@ jobs:
       - name: Get the release version from the tag
         if: env.NEPTUNGEN_VERSION == ''
         run: |
-          # Apparently, this is the right way to get a tag name. Really?
-          #
-          # See: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
           echo "NEPTUNGEN_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           echo "version is: ${{ env.NEPTUNGEN_VERSION }}"
+          echo "tagname is: ${{ github.event.release.tag_name }}"
       - name: Create GitHub release
         id: release
         uses: actions/create-release@v1
@@ -115,7 +113,7 @@ jobs:
       run: cargo build --verbose --release
 
     - name: Strip release binary (linux and macos)
-      if: matrix.build == 'linux' || matrix.build == 'macos'
+      if: matrix.build == 'linux'
       run: strip "target/${{ matrix.target }}/release/neptungen"
 
     - name: Build archive
