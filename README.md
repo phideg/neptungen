@@ -1,5 +1,4 @@
-[![Build Status](https://travis-ci.org/phideg/neptungen.svg?branch=master)](https://travis-ci.org/phideg/neptungen)
-[![Build status](https://ci.appveyor.com/api/projects/status/hvdr3ly46uy68o18?svg=true)](https://ci.appveyor.com/project/phideg/neptungen)
+[![Rust-Build Actions Status](https://github.com/phideg/neptungen/workflows/Rust/badge.svg)](https://github.com/phideg/neptungen/actions)
 
 
 # neptungen
