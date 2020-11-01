@@ -114,7 +114,7 @@ jobs:
 
     - name: Strip release binary (linux and macos)
       if: matrix.build == 'linux'
-      run: strip "target/${{ matrix.target }}/release/neptungen"
+      run: strip "target/release/neptungen"
 
     - name: Build archive
       shell: bash
