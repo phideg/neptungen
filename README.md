@@ -1,4 +1,4 @@
-[![Rust-Build Actions Status](https://github.com/phideg/neptungen/workflows/Rust/badge.svg)](https://github.com/phideg/neptungen/actions)
+[![Rust-Build Actions Status](https://github.com/phideg/neptungen/workflows/ci/badge.svg)](https://github.com/phideg/neptungen/actions)
 
 
 # neptungen
