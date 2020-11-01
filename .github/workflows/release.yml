@@ -123,11 +123,11 @@ jobs:
         mkdir -p "$staging"
         cp {README.md,LICENSE} "$staging/"
         if [ "${{ matrix.os }}" = "windows-2019" ]; then
-          cp "target/${{ matrix.target }}/release/neptungen.exe" "$staging/"
+          cp "target/release/neptungen.exe" "$staging/"
           7z a "$staging.zip" "$staging"
           echo "ASSET=$staging.zip" >> $GITHUB_ENV
         else
-          cp "target/${{ matrix.target }}/release/neptungen" "$staging/"
+          cp "target/release/neptungen" "$staging/"
           tar czf "$staging.tar.gz" "$staging"
           echo "ASSET=$staging.tar.gz" >> $GITHUB_ENV
         fi
