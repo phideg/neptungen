@@ -314,7 +314,7 @@ fn apply_page_template(
         .unwrap()
         .parse(template::load_page_template(conf).as_str())
         .expect("Page template could not be parsed!");
-    let mut root_dir = String::new();
+    let mut root_dir = String::from("./");
     for _ in 1..depth {
         root_dir.push_str("../");
     }
