@@ -63,7 +63,8 @@ impl<'a> Synchronizer<'a> {
         );
         let mut ftp_stream = FtpStream::connect(connection_str.as_str()).unwrap();
         println!(
-            "Enter password for ftp server '{}'",
+            "Enter password for ftp server '{}' user '{}'",
+            sync_settings.ftp_server.as_str(),
             sync_settings.ftp_user.as_str()
         );
         let passwd = rpassword::prompt_password_stdout("Password: ")
@@ -213,7 +214,15 @@ impl<'a> Synchronizer<'a> {
 
     fn create_and_change_to_directory(&mut self, src_dir: &Path) {
         self.ftp_stream
-            .cwd("/")
+            .cwd(
+                self.conf
+                    .sync_settings
+                    .as_ref()
+                    .unwrap()
+                    .ftp_target_dir
+                    .as_deref()
+                    .unwrap_or("/"),
+            )
             .expect("Couldn't change to root dir");
         for comp in src_dir.components().skip(self.output_path_offset) {
             let dir = comp

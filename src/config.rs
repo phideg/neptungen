@@ -30,6 +30,7 @@ pub struct SyncSettings {
     pub ftp_server: String,
     pub ftp_port: Option<u32>,
     pub ftp_user: String,
+    pub ftp_target_dir: Option<String>,
     pub ftp_overwrite: Option<bool>,
 }
 
