@@ -64,7 +64,7 @@ pub fn build(path: &Path, conf: &Config) -> Result<()> {
 }
 
 fn build_page(
-    nav_items: Vec<liquid::model::value::Value>,
+    nav_items: Vec<liquid::model::Value>,
     entry: &DirEntry,
     target_dir: &Path,
     conf: &Config,
@@ -126,8 +126,8 @@ fn copy_images(source: &Path, target: &Path) {
     }
 }
 
-fn prepare_site_structure(path: &Path, target_path: &Path) -> Vec<liquid::model::value::Value> {
-    let mut nav_entries = Vec::<liquid::model::value::Value>::new();
+fn prepare_site_structure(path: &Path, target_path: &Path) -> Vec<liquid::model::Value> {
+    let mut nav_entries = Vec::<liquid::model::Value>::new();
     let walker = WalkDir::new(path)
         .min_depth(1)
         .sort_by(|a, b| a.file_name().cmp(b.file_name()))
@@ -167,7 +167,7 @@ fn prepare_site_structure(path: &Path, target_path: &Path) -> Vec<liquid::model:
             "menu_cmd" : menu_cmd.to_string().to_owned(),
             "level_depth" : level_depth as i32,
         });
-        nav_entries.push(liquid::model::value::Value::Object(nav_entry));
+        nav_entries.push(liquid::model::Value::Object(nav_entry));
         prev_depth = entry.depth();
     }
     nav_entries
@@ -177,9 +177,9 @@ fn prepare_gallery(
     source_entry: &DirEntry,
     target_path: &Path,
     conf: &Config,
-) -> Vec<liquid::model::value::Value> {
+) -> Vec<liquid::model::Value> {
     let gallery_settings = conf.gallery.as_ref().unwrap();
-    let mut images = Vec::<liquid::model::value::Value>::new();
+    let mut images = Vec::<liquid::model::Value>::new();
     let img_dir = gallery_settings.img_dir.as_ref().unwrap();
     let target_dir = target_path.join(img_dir.as_str());
     match DirBuilder::new().recursive(true).create(&target_dir) {
@@ -254,15 +254,15 @@ fn prepare_gallery(
             "name"  : rel_image_path.to_str().unwrap().to_owned(),
             "thumb" : rel_thumb_path.to_str().unwrap().to_owned(),
         });
-        images.push(liquid::model::value::Value::Object(image_entry));
+        images.push(liquid::model::Value::Object(image_entry));
     }
     images
 }
 
 fn apply_gallery_template(
     content: &str,
-    nav_items: Vec<liquid::model::value::Value>,
-    images: Vec<liquid::model::value::Value>,
+    nav_items: Vec<liquid::model::Value>,
+    images: Vec<liquid::model::Value>,
     depth: usize,
     conf: &Config,
 ) -> String {
@@ -278,11 +278,11 @@ fn apply_gallery_template(
     let mut context = liquid::model::Object::new();
     context.insert(
         "root_dir".into(),
-        liquid::model::value::Value::scalar(root_dir),
+        liquid::model::Value::scalar(root_dir),
     );
     context.insert(
         "title".into(),
-        liquid::model::value::Value::scalar(if conf.title.is_some() {
+        liquid::model::Value::scalar(if conf.title.is_some() {
             conf.title.as_ref().unwrap().clone()
         } else {
             "None".to_string()
@@ -290,13 +290,13 @@ fn apply_gallery_template(
     );
     context.insert(
         "nav_items".into(),
-        liquid::model::value::Value::Array(nav_items),
+        liquid::model::Value::Array(nav_items),
     );
     context.insert(
         "content".into(),
-        liquid::model::value::Value::scalar(content.to_owned()),
+        liquid::model::Value::scalar(content.to_owned()),
     );
-    context.insert("images".into(), liquid::model::value::Value::Array(images));
+    context.insert("images".into(), liquid::model::Value::Array(images));
     match template.render(&context) {
         Ok(output) => output,
         Err(error) => panic!("Could not render Page template: {}", error),
@@ -305,7 +305,7 @@ fn apply_gallery_template(
 
 fn apply_page_template(
     content: &str,
-    nav_items: Vec<liquid::model::value::Value>,
+    nav_items: Vec<liquid::model::Value>,
     depth: usize,
     conf: &Config,
 ) -> String {
@@ -325,7 +325,7 @@ fn apply_page_template(
         } else {
             "None".to_string()
         },
-        "nav_items" : liquid::model::value::Value::Array(nav_items),
+        "nav_items" : liquid::model::Value::Array(nav_items),
         "content" : content.to_owned(),
     });
     match template.render(&context) {

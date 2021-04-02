@@ -288,7 +288,7 @@ impl<'a> Synchronizer<'a> {
                 self.ftp_stream.put(file_name, &mut f).map_err(|e| {
                     io::Error::new(
                         io::ErrorKind::Other,
-                        format!("Error during ftp put operation: {:?}", e).as_ref(),
+                        format!("Error during ftp put operation: {:?}", e),
                     )
                 })
             })
