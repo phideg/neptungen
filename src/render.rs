@@ -276,10 +276,7 @@ fn apply_gallery_template(
         root_dir.push_str("../");
     }
     let mut context = liquid::model::Object::new();
-    context.insert(
-        "root_dir".into(),
-        liquid::model::Value::scalar(root_dir),
-    );
+    context.insert("root_dir".into(), liquid::model::Value::scalar(root_dir));
     context.insert(
         "title".into(),
         liquid::model::Value::scalar(if conf.title.is_some() {
@@ -288,10 +285,7 @@ fn apply_gallery_template(
             "None".to_string()
         }),
     );
-    context.insert(
-        "nav_items".into(),
-        liquid::model::Value::Array(nav_items),
-    );
+    context.insert("nav_items".into(), liquid::model::Value::Array(nav_items));
     context.insert(
         "content".into(),
         liquid::model::Value::scalar(content.to_owned()),
