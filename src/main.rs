@@ -1,22 +1,4 @@
-extern crate checksums;
-#[macro_use]
-extern crate clap;
-#[macro_use]
-extern crate error_chain;
-extern crate ftp;
-extern crate image;
-extern crate liquid;
-extern crate pulldown_cmark;
-extern crate rayon;
-extern crate rpassword;
-#[macro_use]
-extern crate serde_derive;
-extern crate term_painter;
-extern crate toml;
-extern crate walkdir;
-
 mod config;
-mod errors;
 mod filter;
 mod render;
 mod sync;
@@ -24,31 +6,24 @@ mod template;
 
 use crate::config::Config;
 use crate::sync::Synchronizer;
-use clap::{App, Arg, SubCommand};
+use anyhow::Result;
+use clap::{crate_version, App, Arg, SubCommand};
 use std::fs;
 use std::path::Path;
 
-fn build(path: &Path, conf: &Config) {
-    if let Err(ref e) = render::build(path, conf) {
-        errors::print_error(e);
-    }
-}
-
-fn sync(path: &Path, conf: &Config, with_build: bool, overwrite: bool) {
+fn sync(path: &Path, conf: &Config, with_build: bool, overwrite: bool) -> Result<()> {
     if with_build {
-        build(path, conf);
+        render::build(path, conf)?
     }
-    let mut synchronizer = Synchronizer::new(conf);
+    let mut synchronizer = Synchronizer::new(conf)?;
     if overwrite {
-        synchronizer.push_all_files();
+        synchronizer.push_all_files()
     } else {
-        synchronizer.execute();
+        synchronizer.execute()
     }
 }
 
-fn main() {
-    // parse command line options
-    //
+fn main() -> Result<()> {
     let matches = App::new("neptungen")
         .about("Simple website generator")
         .version(crate_version!())
@@ -95,29 +70,23 @@ fn main() {
     };
 
     // load configuration from config.toml if present
-    let conf = match Config::load(path.as_path()) {
-        Ok(conf) => conf,
-        Err(ref e) => {
-            errors::print_message(e);
-            Config::new(path.as_path())
-        }
-    };
+    let conf = Config::load(path.as_path())?;
 
     match matches.subcommand() {
         ("print-config", Some(_)) => {
             conf.print();
         }
-        ("build", Some(_)) => {
-            build(path.as_path(), &conf);
-        }
+        ("build", Some(_)) => render::build(path.as_path(), &conf)?,
         ("sync", Some(matches)) => sync(
             path.as_path(),
             &conf,
             matches.is_present("with_build"),
             matches.is_present("overwrite"),
-        ),
+        )?,
         _ => {
             println!("{}", matches.usage());
         }
-    }
+    };
+
+    Ok(())
 }

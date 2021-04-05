@@ -1,10 +1,10 @@
 use crate::config::Config;
-use crate::errors::*;
 use crate::filter::{
     contains_markdown_file, contains_markdown_subdir, is_directory, is_hidden, is_image,
     is_markdown,
 };
 use crate::template;
+use anyhow::Result;
 use image;
 use liquid;
 use pulldown_cmark::{html, Options, Parser};

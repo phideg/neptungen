@@ -1,5 +1,5 @@
-use crate::errors::Error;
-use crate::errors::ResultExt;
+use anyhow::{Context, Result};
+use serde_derive::Deserialize;
 use std::path::Path;
 use toml;
 
@@ -35,27 +35,15 @@ pub struct SyncSettings {
 }
 
 impl Config {
-    pub fn new(path: &Path) -> Config {
-        let mut conf = Config {
-            title: None,
-            template_dir: None,
-            output_dir: None,
-            copy_dirs: None,
-            gallery: None,
-            sync_settings: None,
-        };
-        conf.resolve_paths(path);
-        conf
-    }
-    pub fn load(path: &Path) -> Result<Config, Error> {
+    pub fn load(path: &Path) -> Result<Config> {
         use std::fs::File;
         use std::io::Read;
         let mut input = String::new();
         File::open(path.join("config.toml").as_path())
             .and_then(|mut f| f.read_to_string(&mut input))
-            .chain_err(|| "couldn't find or read file 'config.toml'")?;
-        let mut conf = toml::from_str::<Config>(input.as_str())
-            .chain_err(|| "parsing 'config.toml' failed")?;
+            .context("couldn't find or read file 'config.toml'")?;
+        let mut conf =
+            toml::from_str::<Config>(input.as_str()).context("parsing 'config.toml' failed")?;
         conf.resolve_paths(path);
         Ok(conf)
     }
@@ -123,7 +111,6 @@ impl Config {
             self.copy_dirs = Some(new_copy_dirs);
         }
     }
-
     pub fn print(&self) {
         use term_painter::Attr::Bold;
         use term_painter::ToStyle;
