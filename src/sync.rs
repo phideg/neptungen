@@ -228,7 +228,7 @@ impl<'a> Synchronizer<'a> {
         Ok(())
     }
 
-    fn change_to_dir(&mut self, to_dir: &Path)  -> Result<()> {
+    fn change_to_dir(&mut self, to_dir: &Path) -> Result<()> {
         self.ftp_stream
             .cwd("/")
             .context("Couldn't change to root dir")?;
@@ -237,7 +237,9 @@ impl<'a> Synchronizer<'a> {
                 .as_os_str()
                 .to_str()
                 .with_context(|| format!("Couldn't convert component '{:?}' to string.", comp))?;
-            self.ftp_stream.cwd(dir).with_context(|| format!("FTP: couldn't change to '{}'", dir))?;
+            self.ftp_stream
+                .cwd(dir)
+                .with_context(|| format!("FTP: couldn't change to '{}'", dir))?;
         }
         Ok(())
     }
@@ -266,7 +268,9 @@ impl<'a> Synchronizer<'a> {
         self.create_and_change_to_directory(src_path.parent().unwrap())?;
         let file_name = src_path.file_name().and_then(|s| s.to_str()).unwrap();
         let mut f = File::open(src_path)?;
-        self.ftp_stream.put(file_name, &mut f).with_context(|| format!("Couldn't push file '{}' to ftp server", file_name))
+        self.ftp_stream
+            .put(file_name, &mut f)
+            .with_context(|| format!("Couldn't push file '{}' to ftp server", file_name))
     }
 }
 
