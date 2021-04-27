@@ -6,9 +6,11 @@ use crate::filter::{
 use crate::template;
 use anyhow::Result;
 use image;
+use lazy_static::lazy_static;
 use liquid;
 use pulldown_cmark::{html, Options, Parser};
 use rayon::prelude::*;
+use regex::Regex;
 use std::fmt::{self, Debug};
 use std::fs;
 use std::fs::DirBuilder;
@@ -35,7 +37,7 @@ impl fmt::Display for MenuCmd {
 pub fn build(path: &Path, conf: &Config) -> Result<()> {
     let path_comps = path.components().collect::<Vec<_>>();
     let output_dir = PathBuf::from(conf.output_dir.as_ref().unwrap());
-    let nav_items = prepare_site_structure(path, output_dir.as_path());
+    let nav_items = prepare_site_structure(path, output_dir.as_path(), conf);
     // let last_gen_timestmp = set_and_determine_last_generation(output_dir.as_path());
     let entries = WalkDir::new(path)
         .min_depth(1)
@@ -126,7 +128,26 @@ fn copy_images(source: &Path, target: &Path) {
     }
 }
 
-fn prepare_site_structure(path: &Path, target_path: &Path) -> Vec<liquid::model::Value> {
+fn remove_number_prefix<'a>(name: &'a str, conf: &Config) -> &'a str {
+    lazy_static! {
+        static ref NUM_PREFIX: Regex = Regex::new("^[0-9]+_.+$").unwrap();
+    }
+    if (conf.remove_numbered_prefix.is_none() || conf.remove_numbered_prefix.unwrap_or(true))
+        && NUM_PREFIX.is_match(name)
+    {
+        let mut splitter = name.splitn(2, '_');
+        splitter.next();
+        splitter.next().unwrap()
+    } else {
+        name
+    }
+}
+
+fn prepare_site_structure(
+    path: &Path,
+    target_path: &Path,
+    conf: &Config,
+) -> Vec<liquid::model::Value> {
     let mut nav_entries = Vec::<liquid::model::Value>::new();
     let walker = WalkDir::new(path)
         .min_depth(1)
@@ -138,12 +159,13 @@ fn prepare_site_structure(path: &Path, target_path: &Path) -> Vec<liquid::model:
         walker.filter_entry(|e| is_hidden(e) && is_directory(e) && contains_markdown_file(e))
     {
         let entry = entry.expect("Reading directory entry failed");
-        let name = String::from(
+        let name = String::from(remove_number_prefix(
             entry
                 .file_name()
                 .to_str()
                 .expect("Failed to read navigation entries"),
-        );
+            conf,
+        ));
         let mut url = PathBuf::new();
         for comp in entry.path().components().skip(path_comps.len()) {
             url.push(comp.as_os_str());
@@ -360,4 +382,49 @@ fn write_html_file(html: &str, target_dir: &Path, entry: &DirEntry) {
         );
     }
     println!("written file {}", file_path.display());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn remove_numbered_prefix_default_config() {
+        let conf = Config::default();
+        assert_eq!(remove_number_prefix("name", &conf), "name");
+        assert_eq!(remove_number_prefix("foo_name", &conf), "foo_name");
+        assert_eq!(remove_number_prefix("foo_1_name", &conf), "foo_1_name");
+        assert_eq!(remove_number_prefix("1_", &conf), "1_");
+        assert_eq!(remove_number_prefix("_name", &conf), "_name");
+        assert_eq!(remove_number_prefix("1_name", &conf), "name");
+        assert_eq!(remove_number_prefix("12_name", &conf), "name");
+        assert_eq!(remove_number_prefix("123_name", &conf), "name");
+    }
+
+    #[test]
+    fn remove_numbered_prefix_explicit_true() {
+        let mut conf = Config::default();
+        conf.remove_numbered_prefix = Some(true);
+        assert_eq!(remove_number_prefix("name", &conf), "name");
+        assert_eq!(remove_number_prefix("foo_name", &conf), "foo_name");
+        assert_eq!(remove_number_prefix("foo_1_name", &conf), "foo_1_name");
+        assert_eq!(remove_number_prefix("1_", &conf), "1_");
+        assert_eq!(remove_number_prefix("_name", &conf), "_name");
+        assert_eq!(remove_number_prefix("1_name", &conf), "name");
+        assert_eq!(remove_number_prefix("12_name", &conf), "name");
+        assert_eq!(remove_number_prefix("123_name", &conf), "name");
+    }
+
+    #[test]
+    fn remove_numbered_prefix_explicit_false() {
+        let mut conf = Config::default();
+        conf.remove_numbered_prefix = Some(false);
+        assert_eq!(remove_number_prefix("name", &conf), "name");
+        assert_eq!(remove_number_prefix("foo_name", &conf), "foo_name");
+        assert_eq!(remove_number_prefix("foo_1_name", &conf), "foo_1_name");
+        assert_eq!(remove_number_prefix("1_", &conf), "1_");
+        assert_eq!(remove_number_prefix("_name", &conf), "_name");
+        assert_eq!(remove_number_prefix("1_name", &conf), "1_name");
+        assert_eq!(remove_number_prefix("12_name", &conf), "12_name");
+        assert_eq!(remove_number_prefix("123_name", &conf), "123_name");
+    }
 }

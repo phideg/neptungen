@@ -6,11 +6,12 @@ use toml;
 static GALLERY_FOLDER_NAME: &str = "images";
 static OUTPUT_FOLDER_NAME: &str = "_output";
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 pub struct Config {
     pub title: Option<String>,
     pub template_dir: Option<String>,
     pub output_dir: Option<String>,
+    pub remove_numbered_prefix: Option<bool>,
     pub copy_dirs: Option<Vec<String>>,
     pub gallery: Option<Gallery>,
     pub sync_settings: Option<SyncSettings>,
