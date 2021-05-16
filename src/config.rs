@@ -1,7 +1,6 @@
 use anyhow::{Context, Result};
 use serde_derive::Deserialize;
 use std::path::Path;
-use toml;
 
 static GALLERY_FOLDER_NAME: &str = "images";
 static OUTPUT_FOLDER_NAME: &str = "_output";
@@ -49,13 +48,7 @@ impl Config {
         Ok(conf)
     }
     pub fn resolve_paths(&mut self, base_path: &Path) {
-        let output_path = base_path.join(
-            &self
-                .output_dir
-                .as_ref()
-                .map(|d| d.as_str())
-                .unwrap_or(OUTPUT_FOLDER_NAME),
-        );
+        let output_path = base_path.join(&self.output_dir.as_deref().unwrap_or(OUTPUT_FOLDER_NAME));
         self.output_dir = Some(
             output_path
                 .as_path()

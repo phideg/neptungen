@@ -7,7 +7,6 @@ use checksums::Algorithm;
 use ftp::types::FileType;
 use ftp::FtpError;
 use ftp::FtpStream;
-use rpassword;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::fs::File;
@@ -34,7 +33,6 @@ impl<'a> Synchronizer<'a> {
                 .as_ref()
                 .context("check 'config.toml' output_dir is invalid")?,
         );
-        let output_path_comps = output_path.as_path().components().collect::<Vec<_>>();
         let ftp_stream = Synchronizer::ftp_login(conf)?;
         Ok(Synchronizer {
             conf,
@@ -49,7 +47,7 @@ impl<'a> Synchronizer<'a> {
                 &mut stderr(),
             ),
             output_path: output_path.clone(),
-            output_path_offset: output_path_comps.len(),
+            output_path_offset: output_path.as_path().components().count(),
             ftp_stream,
         })
     }
@@ -100,9 +98,10 @@ impl<'a> Synchronizer<'a> {
                 stream
                     .read_to_end(&mut buf)
                     .map(|_| {
-                        let mut f = File::create(old_hash_file_path.as_path()).expect(
-                            format!("Couldn't create file '{}'.", OLD_CRC_FILE_NAME).as_str(),
-                        );
+                        let mut f =
+                            File::create(old_hash_file_path.as_path()).unwrap_or_else(|_| {
+                                panic!("Couldn't create file '{}'.", OLD_CRC_FILE_NAME)
+                            });
                         f.write_all(buf.as_slice())
                             .expect("Couldn't write hashsums file.")
                     })
@@ -260,7 +259,7 @@ impl<'a> Synchronizer<'a> {
         let comp = src_dir.components().last().unwrap();
         self.ftp_stream
             .rm(comp.as_os_str().to_str().unwrap())
-            .expect(format!("Couldn't remove file '{:?}'", &comp).as_ref());
+            .unwrap_or_else(|_| panic!("Couldn't remove file '{:?}'", &comp));
         Ok(())
     }
 

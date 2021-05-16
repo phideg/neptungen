@@ -5,9 +5,7 @@ use crate::filter::{
 };
 use crate::template;
 use anyhow::Result;
-use image;
 use lazy_static::lazy_static;
-use liquid;
 use pulldown_cmark::{html, Options, Parser};
 use rayon::prelude::*;
 use regex::Regex;
@@ -35,7 +33,6 @@ impl fmt::Display for MenuCmd {
 }
 
 pub fn build(path: &Path, conf: &Config) -> Result<()> {
-    let path_comps = path.components().collect::<Vec<_>>();
     let output_dir = PathBuf::from(conf.output_dir.as_ref().unwrap());
     let nav_items = prepare_site_structure(path, output_dir.as_path(), conf);
     // let last_gen_timestmp = set_and_determine_last_generation(output_dir.as_path());
@@ -54,7 +51,7 @@ pub fn build(path: &Path, conf: &Config) -> Result<()> {
                 .parent()
                 .unwrap()
                 .components()
-                .skip(path_comps.len())
+                .skip(path.components().count())
             {
                 target_dir.push(comp.as_os_str());
             }
@@ -84,7 +81,6 @@ fn build_page(
 
 fn copy_dirs(path: &Path, target_path: &Path, conf: &Config) {
     if conf.copy_dirs.is_some() {
-        let path_comps = path.components().collect::<Vec<_>>();
         for copy_dir in conf.copy_dirs.as_ref().unwrap() {
             let walker = WalkDir::new(path.join(copy_dir).as_path())
                 .min_depth(1)
@@ -92,7 +88,7 @@ fn copy_dirs(path: &Path, target_path: &Path, conf: &Config) {
             for entry in walker.filter(|e| e.is_ok() && !is_directory(e.as_ref().unwrap())) {
                 let entry = entry.unwrap();
                 let mut target_file = PathBuf::from(target_path);
-                for comp in entry.path().components().skip(path_comps.len()) {
+                for comp in entry.path().components().skip(path.components().count()) {
                     target_file.push(comp.as_os_str());
                 }
                 match DirBuilder::new()
@@ -104,7 +100,7 @@ fn copy_dirs(path: &Path, target_path: &Path, conf: &Config) {
                 }
                 if !target_file.exists() {
                     fs::copy(entry.path(), target_file)
-                        .expect(format!("error during copy of {:?}", copy_dir).as_ref());
+                        .unwrap_or_else(|_| panic!("error during copy of {:?}", copy_dir));
                 }
             }
         }
@@ -123,7 +119,7 @@ fn copy_images(source: &Path, target: &Path) {
         target_file.push(entry.path().file_name().unwrap());
         if !target_file.exists() {
             fs::copy(entry.path(), target_file.as_path())
-                .expect(format!("Error during copy of {:?}", entry.path().display()).as_ref());
+                .unwrap_or_else(|_| panic!("Error during copy of {:?}", entry.path().display()));
         }
     }
 }
@@ -154,7 +150,6 @@ fn prepare_site_structure(
         .sort_by(|a, b| a.file_name().cmp(b.file_name()))
         .into_iter();
     let mut prev_depth = 1;
-    let path_comps = path.components().collect::<Vec<_>>();
     for entry in
         walker.filter_entry(|e| is_hidden(e) && is_directory(e) && contains_markdown_file(e))
     {
@@ -167,7 +162,7 @@ fn prepare_site_structure(
             conf,
         ));
         let mut url = PathBuf::new();
-        for comp in entry.path().components().skip(path_comps.len()) {
+        for comp in entry.path().components().skip(path.components().count()) {
             url.push(comp.as_os_str());
         }
         let target_dir = target_path.join(url.as_path());
@@ -223,14 +218,12 @@ fn prepare_gallery(
     .collect::<Vec<_>>();
     for entry in entries {
         let entry = entry.unwrap();
-        let mut img = image::open(entry.path()).expect(
-            format!(
-                "Resize of '{}' failed: The gallery folder should only contain \
-                 images!",
+        let mut img = image::open(entry.path()).unwrap_or_else(|_| {
+            panic!(
+                "Resize of '{}' failed: The gallery folder should only contain images!",
                 entry.path().display()
             )
-            .as_ref(),
-        );
+        });
 
         let mut image_path = PathBuf::from(&target_dir);
         let mut rel_image_path = PathBuf::from(img_dir.as_str());
@@ -246,7 +239,7 @@ fn prepare_gallery(
                 image::imageops::FilterType::Nearest,
             );
             img.save_with_format(&image_path, image::ImageFormat::Png)
-                .expect(format!("Saving image '{}' failed", image_path.display()).as_ref());
+                .unwrap_or_else(|_| panic!("Saving image '{}' failed", image_path.display()));
         }
 
         let mut thumb_path = PathBuf::from(&target_dir);
@@ -269,7 +262,7 @@ fn prepare_gallery(
                 image::imageops::FilterType::Nearest,
             );
             img.save_with_format(&thumb_path, image::ImageFormat::Png)
-                .expect(format!("Saving thumb image '{}' failed", thumb_path.display()).as_ref());
+                .unwrap_or_else(|_| panic!("Saving thumb image '{}' failed", thumb_path.display()));
         }
 
         let image_entry = liquid::object!({
