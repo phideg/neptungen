@@ -39,9 +39,7 @@ impl Synchronizer {
         let server = String::from(&sync_settings.ftp_server);
         let user = &sync_settings.ftp_user;
         let port = sync_settings.ftp_port.unwrap_or(21);
-        let protocol = sync_settings
-            .ftp_protocol
-            .unwrap_or(FtpProtocol::Ftp);
+        let protocol = sync_settings.ftp_protocol.unwrap_or(FtpProtocol::Ftp);
         let ftp_stream: Box<dyn FtpOperations> = if protocol == FtpProtocol::Ftp {
             Box::new(Ftp::new(&server, port, &user)?)
         } else {
@@ -109,7 +107,8 @@ impl Synchronizer {
         let mut hash_file_path = self.create_and_change_to_root()?;
         hash_file_path.push(CRC_FILE_NAME);
         let old_hash_file_path = PathBuf::from(&self.output_path).join(OLD_CRC_FILE_NAME);
-        self.ftp_stream.get(&hash_file_path,&old_hash_file_path)
+        self.ftp_stream
+            .get(&hash_file_path, &old_hash_file_path)
             .context("loading of existing checksums file failed")?;
         Ok(old_hash_file_path)
     }
@@ -118,8 +117,9 @@ impl Synchronizer {
         // load old checksums
         let old_hash_file_path = self.retrieve_checksums_file()?;
         let old_hash_file = old_hash_file_path.to_string_lossy().to_string();
-        let old_hashsums = ops::read_hashes(&mut stderr(), &(old_hash_file, old_hash_file_path.clone()))
-            .map_err(|_| anyhow!("Couldn't read existing checksums"))?;
+        let old_hashsums =
+            ops::read_hashes(&mut stderr(), &(old_hash_file, old_hash_file_path.clone()))
+                .map_err(|_| anyhow!("Couldn't read existing checksums"))?;
         // ignore if old CRC file could not be deleted
         let _ = fs::remove_file(&old_hash_file_path);
         // compare checksums
