@@ -25,10 +25,17 @@ pub struct Gallery {
     pub thumb_height: u32,
 }
 
+#[derive(PartialEq, Clone, Copy, Debug, Deserialize)]
+pub enum FtpProtocol {
+    Ftp,
+    Sftp,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct SyncSettings {
     pub ftp_server: String,
     pub ftp_port: Option<u32>,
+    pub ftp_protocol: Option<FtpProtocol>,
     pub ftp_user: String,
     pub ftp_target_dir: Option<String>,
     pub ftp_overwrite: Option<bool>,
