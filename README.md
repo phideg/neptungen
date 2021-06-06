@@ -2,9 +2,11 @@
 
 
 # neptungen
+
 Yet another static Website Generator
 
 # Why
+
 Have you ever designed a static website for your club or for one of your relatives but you didn't want to maintain the contents for them? Well most static website generators are either dedicated to bloggers or they are too complicated to be used by non digital natives. 
 
 The goal of neptungen is to be easy to use and minutes to set up even if you aren't an experienced web developer. 
@@ -12,17 +14,20 @@ The goal of neptungen is to be easy to use and minutes to set up even if you are
 But probably the real reason for neptungen was the desire to learn programming in Rust. So over time the code will hopefully get more idiomatic.
 
 # How does it work
+
 It turns a directory tree containing one markdown file per directory into a static website. The look and feel of the generated website is controlled via [liquid](https://shopify.github.io/liquid/) templates.
 
 # Features
+
 - Completely written in Rust
 - Turns CommonMark into HTML5 
 - Built-in gallery generator
-- Built in FTP synchronization
+- Built in FTP / SFTP synchronization
 - Customizable via [liquid](https://shopify.github.io/liquid/) templates
 - Page generator uses rayon :)
 
 # Installation
+
 You can download one of the [releases](https://github.com/phideg/neptungen/releases) or build the neptungen executable yourself.
 
 __how to build neptungen__  
@@ -34,14 +39,19 @@ cargo build --release
 ```
 
 # Who uses neptungen
+
 - [TSC Neptun Bruehl](http://tsc-neptun-bruehl.de)
 
 # Getting started
+
 Create a new root folder for your website
+
 ```bash
 mkdir my_new_website
 ```
+
 Each folders beneath that root folder represents a separate page of your website. The name of such a sub-folder will be used as a label in the navigation menu.
+
 ```bash
 cd my_new_website
 mkdir nav1
@@ -70,20 +80,31 @@ cd ../../my_new_website
 By default the generated output can be found in the `_output` directory.
 
 # Galleries
+
 Galleries are similar to normal pages. Create an `images` sub directory within any of your page directories. Copy or symlink all relevant images into it. Create a markdown file named `gallery.md`. Neptungen will then call the gallery.liq template to generate the gallery page.
 
-By defailt the images are resized to 800x600 pixels and the corresponding thumbs nails are set to 90x90 pixels. Those default settings can be overwritten via the configuration file `config.toml`. 
+By defailt the images are resized to 800x600 pixels and the corresponding thumbs nails are set to 90x90 pixels. Those default settings can be overwritten via the configuration file `config.toml`.s
+
+# Tips & Tricks
+
+## Page ordering
+
+If you want to control the sort order of your pages you can add a number prefix to the folder name. So lets say you have an `about` folder and an `home` folder. By default neptungen would sort the in alphabetical order. By adding a numbered prefix like `1_home` and `2_about` neptungen will render `1_home` first and then `2_about`. As you would expect the numbered prefix `1_` will not be
+rendered.
 
 # Sync
+
 __ftp__  
 So far you can only synchronize your static content with an FTP server. See ftp settings in `config.toml`. Currently neptungen will always try to sync your static website at the root of your FTP.
 
 ToDo:  
-* [ ] Allow sync to remote subdir  
-* [ ] Support SFTP
-* [ ] Support SSH
+
+- [X] Allow sync to remote subdir  
+- [X] Support SFTP
+- [ ] Support SSH
 
 # config.toml
+
 Neptungen can be tweaked with the `config.toml` file. It has to be put into the root directory of your project. [TOML](https://github.com/toml-lang/toml) aims to be a minimal configuration file format that's easy to read due to obvious semantics. Neptungen offers the following configuration options:
 
 ```toml
@@ -111,17 +132,22 @@ Neptungen will also work without a `config.toml`. In case no config was provided
 ```bash
 neptungen show_config
 ```
+
 # The default template
+
 The default template of neptungen is based on the "Web Page Template" offered by [W3C schools](https://www.w3schools.com/w3css/w3css_templates.asp). The next section will describe in more detail how you could design your own custom templates.
 
 # Customize your website
+
 You don't want to use the built-in website theme? Just create a template directory and specify the path to that directory in your config.toml file (`template_dir = "my_template_folder"`).
 
 Neptungen needs 2 templates:
+
  1. A page template named `page.liq`
  2. A gallery template named `gallery.liq`
 
 Neptungen provides the following liquid variables:
+
  - __{{ title }}__ 
  - __{{ content }}__
  - __{{ root_dir }}__
@@ -172,6 +198,7 @@ Neptungen provides the following liquid variables:
 Please also have a look into the examples as they are always a good starting point.
 
 # Alternatives
+
 In case neptungen does not fulfill your requirements you might want to look into:
 - [cobalt](https://github.com/cobalt-org/cobalt.rs)
 - [gutenberg](https://github.com/Keats/gutenberg)
