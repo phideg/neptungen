@@ -15,7 +15,7 @@ use std::path::Path;
 
 fn sync(path: &Path, conf: &Config, with_build: bool, overwrite: bool) -> Result<()> {
     if with_build {
-        render::build(path, conf)?
+        render::build(path, conf, true)?
     }
     let mut synchronizer = Synchronizer::new(conf)?;
     if overwrite {
@@ -42,6 +42,14 @@ fn main() -> Result<()> {
                 .about("Prints the configuration of the config.toml file"),
         )
         .subcommand(SubCommand::with_name("build").about("Generate the website"))
+        .arg(
+            Arg::with_name("clean")
+                .short("c")
+                .long("clean")
+                .help("Removes all contents from the output directory before building")
+                .multiple(false)
+                .takes_value(false),
+        )
         .subcommand(
             SubCommand::with_name("sync")
                 .about("Used to synchronize the website with an ftp server")
@@ -54,10 +62,10 @@ fn main() -> Result<()> {
                         .takes_value(false),
                 )
                 .arg(
-                    Arg::with_name("with_build")
+                    Arg::with_name("with_scratch_build")
                         .short("n")
-                        .long("with_build")
-                        .help("Build the project before executing the sync")
+                        .long("with_scratch_build")
+                        .help("Executes a scratch build of the project before executing the sync")
                         .multiple(false)
                         .takes_value(false),
                 ),
@@ -78,11 +86,13 @@ fn main() -> Result<()> {
         ("print-config", Some(_)) => {
             conf.print();
         }
-        ("build", Some(_)) => render::build(path.as_path(), &conf)?,
+        ("build", Some(matches)) => {
+            render::build(path.as_path(), &conf, matches.is_present("clean"))?
+        }
         ("sync", Some(matches)) => sync(
             path.as_path(),
             &conf,
-            matches.is_present("with_build"),
+            matches.is_present("with_scratch_build"),
             matches.is_present("overwrite"),
         )?,
         _ => {

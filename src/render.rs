@@ -32,8 +32,11 @@ impl fmt::Display for MenuCmd {
     }
 }
 
-pub fn build(path: &Path, conf: &Config) -> Result<()> {
+pub fn build(path: &Path, conf: &Config, clean: bool) -> Result<()> {
     let output_dir = PathBuf::from(conf.output_dir.as_ref().unwrap());
+    if clean {
+        fs::remove_dir_all(&output_dir)?;
+    }
     let nav_items = prepare_site_structure(path, output_dir.as_path(), conf);
     // let last_gen_timestmp = set_and_determine_last_generation(output_dir.as_path());
     let entries = WalkDir::new(path)

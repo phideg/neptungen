@@ -150,8 +150,7 @@ impl FtpOperations for Sftp {
         // in contrast to classic ftp this sftp api supports std::Path
         // so we only need to check that the directory exists a cwd operation
         let sftp = self.session.sftp()?;
-        sftp
-            .opendir(path)
+        sftp.opendir(path)
             .with_context(|| format!("SFTP: couldn't read '{:?}'", path))
             .map(|_| ())
     }
