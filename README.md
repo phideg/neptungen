@@ -89,7 +89,7 @@ By defailt the images are resized to 800x600 pixels and the corresponding thumbs
 
 ## Page ordering
 
-If you want to control the sort order of your pages you can add a number prefix to the folder name. So lets say you have an `about` folder and an `home` folder. By default neptungen would sort the in alphabetical order. By adding a numbered prefix like `1_home` and `2_about` neptungen will render `1_home` first and then `2_about`. As you would expect the numbered prefix `1_` will not be
+If you want to control the sort order of your pages you can add a numbered prefix '000_' to the folder name. So lets say you have an `about` folder and an `home` folder. By default neptungen would sort the in alphabetical order. That means `home` will be rendered first. By adding a numbered prefix like `1_home` and `2_about` neptungen will render `1_home` first and then `2_about`. As you would expect the numbered prefix `1_` will not be
 rendered.
 
 # Sync
