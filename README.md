@@ -1,15 +1,14 @@
 [![Rust-Build Actions Status](https://github.com/phideg/neptungen/workflows/ci/badge.svg)](https://github.com/phideg/neptungen/actions)
 
-
 # neptungen
 
 Yet another static Website Generator
 
 # Why
 
-Have you ever designed a static website for your club or for one of your relatives but you didn't want to maintain the contents for them? Well most static website generators are either dedicated to bloggers or they are too complicated to be used by non digital natives. 
+Have you ever designed a static website for your club or for one of your relatives but you didn't want to maintain the contents for them? Well most static website generators are either dedicated to bloggers or they are too complicated to be used by non digital natives.
 
-The goal of neptungen is to be easy to use and minutes to set up even if you aren't an experienced web developer. 
+The goal of neptungen is to be easy to use and minutes to set up even if you aren't an experienced web developer.
 
 But probably the real reason for neptungen was the desire to learn programming in Rust. So over time the code will hopefully get more idiomatic.
 
@@ -20,7 +19,7 @@ It turns a directory tree containing one markdown file per directory into a stat
 # Features
 
 - Completely written in Rust
-- Turns CommonMark into HTML5 
+- Turns CommonMark into HTML5
 - Built-in gallery generator
 - Built in FTP / SFTP synchronization
 - Customizable via [liquid](https://shopify.github.io/liquid/) templates
@@ -75,7 +74,7 @@ The final step is to generate the site. Therefore `cd` into the root directory a
 ```bash
 cd ../../my_new_website
 /path/to/your/neptungen_executable/neptungen build
-``` 
+```
 
 By default the generated output can be found in the `_output` directory.
 
@@ -130,7 +129,7 @@ ftp_user = "my_ftp_user"
 Neptungen will also work without a `config.toml`. In case no config was provided default settings are used. Run the following in a project without a `config.toml` to see the default values.
 
 ```bash
-neptungen show_config
+neptungen print-config
 ```
 
 # The default template
@@ -148,9 +147,9 @@ Neptungen needs 2 templates:
 
 Neptungen provides the following liquid variables:
 
- - __{{ title }}__ 
- - __{{ content }}__
- - __{{ root_dir }}__
+- __{{ title }}__
+- __{{ content }}__
+- __{{ root_dir }}__
 
  The {{root_dir}} variable contains a relative path to your web root depending on the depth of your site structure.
  The other variables are quite self explanatory. A little more complex is the `nav_items` collection. The following example template code show how you can use the collection to build a simple list based menu:
@@ -200,5 +199,6 @@ Please also have a look into the examples as they are always a good starting poi
 # Alternatives
 
 In case neptungen does not fulfill your requirements you might want to look into:
+
 - [cobalt](https://github.com/cobalt-org/cobalt.rs)
 - [gutenberg](https://github.com/Keats/gutenberg)

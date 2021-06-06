@@ -62,7 +62,7 @@ fn main() -> Result<()> {
                         .takes_value(false),
                 )
                 .arg(
-                    Arg::with_name("with_scratch_build")
+                    Arg::with_name("with-scratch-build")
                         .short("n")
                         .long("with_scratch_build")
                         .help("Executes a scratch build of the project before executing the sync")
