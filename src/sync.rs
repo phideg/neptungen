@@ -169,7 +169,7 @@ impl Synchronizer {
             let new_dir = comp_as_str!(comp)?;
             to_dir.push(new_dir);
             if self.ftp_stream.cwd(&to_dir).is_err() {
-                println!("Creating ftp target dir '{}'", new_dir);
+                println!("Creating target dir '{}'", new_dir);
                 self.ftp_stream.mkdir(&to_dir)?;
                 self.ftp_stream.cwd(&to_dir)?;
             }
