@@ -39,12 +39,12 @@ pub fn build(path: &Path, conf: &Config, clean: bool) -> Result<()> {
     }
     let nav_items = prepare_site_structure(path, output_dir.as_path(), conf);
     // let last_gen_timestmp = set_and_determine_last_generation(output_dir.as_path());
-    let entries = WalkDir::new(path)
+    let entries: Vec<_> = WalkDir::new(path)
         .min_depth(1)
         .into_iter()
-        .filter_entry(|e| is_hidden(e))
+        .filter_entry(is_hidden)
         .filter(|e| e.is_ok() && is_markdown(e.as_ref().unwrap()))
-        .collect::<Vec<_>>();
+        .collect();
     entries.par_iter().for_each(|e| {
         let src = e.as_ref().unwrap();
         let mut target_dir = output_dir.clone();
@@ -370,13 +370,12 @@ fn write_html_file(html: &str, target_dir: &Path, entry: &DirEntry) {
     };
     let file_path = target_dir.join(html_file.as_path());
     let result = File::create(file_path.as_path()).and_then(|mut f| f.write_all(html.as_bytes()));
-    if result.is_err() {
-        panic!(
-            "Could not write html file {}: {:?}",
-            file_path.as_path().display(),
-            result.err()
-        );
-    }
+    assert!(
+        result.is_ok(),
+        "Could not write html file {}: {:?}",
+        file_path.as_path().display(),
+        result.err()
+    );
     println!("written file {}", file_path.display());
 }
 

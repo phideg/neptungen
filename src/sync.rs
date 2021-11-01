@@ -41,9 +41,9 @@ impl Synchronizer {
         let port = sync_settings.ftp_port.unwrap_or(21);
         let protocol = sync_settings.ftp_protocol.unwrap_or(FtpProtocol::Ftp);
         let ftp_stream: Box<dyn FtpOperations> = if protocol == FtpProtocol::Ftp {
-            Box::new(Ftp::new(&server, port, &user)?)
+            Box::new(Ftp::new(&server, port, user)?)
         } else {
-            Box::new(Sftp::new(&server, port, &user)?)
+            Box::new(Sftp::new(&server, port, user)?)
         };
         Ok(Synchronizer {
             server,

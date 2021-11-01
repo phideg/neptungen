@@ -76,13 +76,12 @@ impl Config {
         }
         if self.template_dir.is_some() {
             let template_path = base_path.join(&self.template_dir.as_ref().unwrap().as_str());
-            if !template_path.exists() {
-                panic!(
-                    "The template directory '{}' does not exist in your project '{}'",
-                    &self.template_dir.as_ref().unwrap().as_str(),
-                    base_path.display()
-                );
-            }
+            assert!(
+                template_path.exists(),
+                "The template directory '{}' does not exist in your project '{}'",
+                &self.template_dir.as_ref().unwrap().as_str(),
+                base_path.display()
+            );
             self.template_dir = Some(
                 template_path
                     .as_path()
@@ -95,13 +94,12 @@ impl Config {
             let mut new_copy_dirs = Vec::<String>::new();
             for copy_dir in self.copy_dirs.as_ref().unwrap() {
                 let path = base_path.join(copy_dir.as_str());
-                if !path.exists() {
-                    panic!(
-                        "The directory '{}' does not exist in your project '{}'",
-                        copy_dir.as_str(),
-                        base_path.display()
-                    );
-                }
+                assert!(
+                    path.exists(),
+                    "The directory '{}' does not exist in your project '{}'",
+                    copy_dir.as_str(),
+                    base_path.display()
+                );
                 new_copy_dirs.push(
                     path.as_path()
                         .to_str()
