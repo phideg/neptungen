@@ -1,5 +1,6 @@
-target
 .history
 .cargo
+.vscode
+target
 *rs.bk
 examples/simple_blog/PUBLIC

@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::filter::{
-    contains_markdown_file, contains_markdown_subdir, is_directory, is_hidden, is_image,
-    is_markdown,
+    contains_markdown_file, contains_markdown_subdir, is_directory, is_image, is_markdown,
+    is_not_hidden,
 };
 use crate::template;
 use anyhow::Result;
@@ -42,7 +42,7 @@ pub fn build(path: &Path, conf: &Config, clean: bool) -> Result<()> {
     let entries: Vec<_> = WalkDir::new(path)
         .min_depth(1)
         .into_iter()
-        .filter_entry(is_hidden)
+        .filter_entry(is_not_hidden)
         .filter(|e| e.is_ok() && is_markdown(e.as_ref().unwrap()))
         .collect();
     entries.par_iter().for_each(|e| {
@@ -154,7 +154,7 @@ fn prepare_site_structure(
         .into_iter();
     let mut prev_depth = 1;
     for entry in
-        walker.filter_entry(|e| is_hidden(e) && is_directory(e) && contains_markdown_file(e))
+        walker.filter_entry(|e| is_not_hidden(e) && is_directory(e) && contains_markdown_file(e))
     {
         let entry = entry.expect("Reading directory entry failed");
         let name = String::from(remove_number_prefix(
@@ -176,9 +176,9 @@ fn prepare_site_structure(
         url.push("index.html");
         let (menu_cmd, level_depth) =
             match (contains_markdown_subdir(&entry), prev_depth > entry.depth()) {
-                (true, true) => (MenuCmd::CloseOpenLevel, prev_depth - entry.depth()),
+                (true, true) => (MenuCmd::CloseOpenLevel, prev_depth - entry.depth() - 1),
                 (true, false) => (MenuCmd::OpenLevel, 0),
-                (false, true) => (MenuCmd::CloseLevel, prev_depth - entry.depth()),
+                (false, true) => (MenuCmd::CloseLevel, prev_depth - entry.depth() - 1),
                 _ => (MenuCmd::None, 0),
             };
         let nav_entry = liquid::object!({
@@ -190,6 +190,16 @@ fn prepare_site_structure(
         nav_entries.push(liquid::model::Value::Object(nav_entry));
         prev_depth = entry.depth();
     }
+    if prev_depth > 1 {
+        let nav_entry = liquid::object!({
+            "name": String::new(),
+            "url" : String::new(),
+            "menu_cmd" : MenuCmd::CloseLevel.to_string().to_owned(),
+            "level_depth" : (prev_depth - 1) as i32,
+        });
+        nav_entries.push(liquid::model::Value::Object(nav_entry));
+    }
+    // dbg!(&nav_entries);
     nav_entries
 }
 

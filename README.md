@@ -29,7 +29,7 @@ It turns a directory tree containing one markdown file per directory into a stat
 
 You can download one of the [releases](https://github.com/phideg/neptungen/releases) or build the neptungen executable yourself.
 
-__how to build neptungen__  
+__how to build neptungen__
 Install stable rust from [here](https://www.rust-lang.org/en-US/install.html) and clone this repo. Finally you can use cargo to build the executable.
 
 ```bash
@@ -93,12 +93,12 @@ rendered.
 
 # Sync
 
-__ftp__  
+__ftp__
 So far you can only synchronize your static content with an FTP server. See ftp settings in `config.toml`. Currently neptungen will always try to sync your static website at the root of your FTP.
 
-ToDo:  
+ToDo:
 
-- [X] Allow sync to remote subdir  
+- [X] Allow sync to remote subdir
 - [X] Support SFTP
 - [ ] Support SSH
 
@@ -156,40 +156,42 @@ Neptungen provides the following liquid variables:
 
 ```html
 <nav id="main-nav" role="navigation">
-    <ul>
+    <ul id="main-menu" class="sm sm-vertical sm-blue">
         <li>
             <a href="{{ root_dir }}index.html">Home</a>
         </li>
-{% for item in nav_items %} 
-    {% if item.menu_cmd == "OpenLevel" %}
-        <li>
-            <a href="#">{{ item.name }}</a>
-            <ul>
-    {% endif %} 
-    {% if item.menu_cmd == "CloseLevel" %} 
-        {% for i in (0..item.level_depth) %}
-            </ul>
-        </li>
+        {% for item in nav_items %}
+            {% if item.menu_cmd == "OpenLevel" %}
+                <li>
+                    <a href="#">{{ item.name }}</a>
+                    <ul>
+            {% endif %}
+            {% if item.menu_cmd == "CloseLevel" %}
+                {% for i in (0..item.level_depth) %}
+                        </ul>
+                    </li>
+                {% endfor %}
+                {% if item.name != "" %}
+                    <li>
+                        <a href="{{ root_dir }}{{ item.url }}">{{ item.name }}</a>
+                    </li>
+                {% endif %}
+            {% endif %}
+            {% if item.menu_cmd == "CloseOpenLevel" %}
+                {% for i in (0..item.level_depth) %}
+                        </ul>
+                    </li>
+                {% endfor %}
+                <li>
+                    <a href="#">{{ item.name }}</a>
+                    <ul>
+            {% endif %}
+            {% if item.menu_cmd == "None" %}
+                <li>
+                    <a href="{{ root_dir }}{{ item.url }}">{{ item.name }}</a>
+                </li>
+            {% endif %}
         {% endfor %}
-        <li>
-            <a href="{{ root_dir }}{{ item.url }}">{{ item.name }}</a>
-        </li>
-    {% endif %} 
-    {% if item.menu_cmd == "CloseOpenLevel" %} 
-        {% for i in (0..item.level_depth) %}
-            </ul>
-        </li>
-            {% endfor %}
-        <li>
-            <a href="#">{{ item.name }}</a>
-            <ul>
-    {% endif %} 
-    {% if item.menu_cmd == "None" %}
-        <li>
-            <a href="{{ root_dir }}{{ item.url }}">{{ item.name }}</a>
-        </li>
-    {% endif %} 
-{% endfor %}
     </ul>
 </nav>
 ```

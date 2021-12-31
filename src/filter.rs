@@ -8,7 +8,7 @@ pub fn is_markdown(entry: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
-pub fn is_hidden(entry: &DirEntry) -> bool {
+pub fn is_not_hidden(entry: &DirEntry) -> bool {
     entry
         .file_name()
         .to_str()
