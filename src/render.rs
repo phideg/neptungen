@@ -82,29 +82,42 @@ fn build_page(
     copy_images(entry.path().parent().unwrap(), target_dir);
 }
 
+fn is_file_modified(src: &Path, trg: &Path) -> bool {
+    if let Ok(src_meta) = src.metadata() {
+        if let Ok(trg_meta) = trg.metadata() {
+            if let Ok(src_tstmp) = src_meta.modified() {
+                if let Ok(trg_tstmp) = trg_meta.modified() {
+                    return src_tstmp.ne(&trg_tstmp);
+                }
+            }
+        }
+    }
+    true
+}
+
 fn copy_dirs(path: &Path, target_path: &Path, conf: &Config) {
-    if conf.copy_dirs.is_some() {
-        for copy_dir in conf.copy_dirs.as_ref().unwrap() {
-            let walker = WalkDir::new(path.join(copy_dir).as_path())
-                .min_depth(1)
-                .into_iter();
-            for entry in walker.filter(|e| e.is_ok() && !is_directory(e.as_ref().unwrap())) {
-                let entry = entry.unwrap();
-                let mut target_file = PathBuf::from(target_path);
-                for comp in entry.path().components().skip(path.components().count()) {
-                    target_file.push(comp.as_os_str());
-                }
-                match DirBuilder::new()
-                    .recursive(true)
-                    .create(target_file.parent().expect("Missing parent folder!"))
-                {
-                    Ok(_) => {}
-                    Err(e) => println!("{}", e),
-                }
-                if !target_file.exists() {
-                    fs::copy(entry.path(), target_file)
-                        .unwrap_or_else(|_| panic!("error during copy of {:?}", copy_dir));
-                }
+    if conf.copy_dirs.is_none() {
+        return;
+    }
+    for copy_dir in conf.copy_dirs.as_ref().unwrap() {
+        let walker = WalkDir::new(path.join(copy_dir).as_path())
+            .min_depth(1)
+            .into_iter();
+        for entry in walker.filter(|e| e.is_ok() && !is_directory(e.as_ref().unwrap())) {
+            let entry = entry.unwrap();
+            let mut target_file = PathBuf::from(target_path);
+            for comp in entry.path().components().skip(path.components().count()) {
+                target_file.push(comp.as_os_str());
+            }
+            if let Err(e) = DirBuilder::new()
+                .recursive(true)
+                .create(target_file.parent().expect("Missing parent folder!"))
+            {
+                println!("{}", e)
+            }
+            if !target_file.exists() || is_file_modified(entry.path(), &target_file) {
+                fs::copy(entry.path(), target_file)
+                    .unwrap_or_else(|_| panic!("error during copy of {:?}", copy_dir));
             }
         }
     }
@@ -169,9 +182,8 @@ fn prepare_site_structure(
             url.push(comp.as_os_str());
         }
         let target_dir = target_path.join(url.as_path());
-        match DirBuilder::new().recursive(true).create(target_dir) {
-            Ok(_) => {}
-            Err(e) => println!("{}", e),
+        if let Err(e) = DirBuilder::new().recursive(true).create(target_dir) {
+            println!("{}", e)
         }
         url.push("index.html");
         let (menu_cmd, level_depth) =
@@ -194,7 +206,7 @@ fn prepare_site_structure(
         let nav_entry = liquid::object!({
             "name": String::new(),
             "url" : String::new(),
-            "menu_cmd" : MenuCmd::CloseLevel.to_string().to_owned(),
+            "menu_cmd" : MenuCmd::CloseLevel.to_string(),
             "level_depth" : (prev_depth - 1) as i32,
         });
         nav_entries.push(liquid::model::Value::Object(nav_entry));
