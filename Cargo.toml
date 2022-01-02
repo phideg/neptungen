@@ -1,6 +1,6 @@
 [package]
 name = "neptungen"
-version = "0.6.3"
+version = "0.6.4"
 authors = ["Philipp Degler <deglerp@googlemail.com>"]
 edition = "2021"
 
@@ -12,7 +12,7 @@ anyhow = "1"
 serde = "1"
 serde_derive = "1"
 toml = "0.5"
-clap = "2"
+clap = { version = "3", features = ["derive"] }
 walkdir = "2"
 pulldown-cmark = "0.9"
 liquid = "0.23"

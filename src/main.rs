@@ -9,12 +9,12 @@ mod template;
 use crate::config::Config;
 use crate::sync::Synchronizer;
 use anyhow::Result;
-use clap::{crate_version, App, Arg, SubCommand};
+use clap::{Parser, Subcommand};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-fn sync(path: &Path, conf: &Config, with_build: bool, overwrite: bool) -> Result<()> {
-    if with_build {
+fn sync(path: &Path, conf: &Config, scratch: bool, overwrite: bool) -> Result<()> {
+    if scratch {
         render::build(path, conf, true)?
     }
     let mut synchronizer = Synchronizer::new(conf)?;
@@ -25,55 +25,51 @@ fn sync(path: &Path, conf: &Config, with_build: bool, overwrite: bool) -> Result
     }
 }
 
+#[derive(Parser)]
+struct Build {
+    /// Generate output from scratch?
+    #[clap(short, long)]
+    clean: bool,
+}
+
+#[derive(Parser)]
+struct Sync {
+    /// Overwrites all remote files?
+    #[clap(short, long)]
+    overwrite: bool,
+    /// Do scratch build before sync?
+    #[clap(short, long)]
+    scratch: bool,
+}
+
+#[derive(Subcommand)]
+enum Command {
+    /// Print the configuration of the config.toml file
+    #[clap(alias = "print-config")]
+    PrintConfig,
+    /// Generate the website
+    Build(Build),
+    /// Synchronize the website with an sftp or ftp server
+    Sync(Sync),
+}
+
+#[derive(Parser)]
+#[clap(about = "Simple static website generator")]
+#[clap(author, version)]
+struct Arguments {
+    /// Specify the path to the project. By default current directory is used.
+    #[clap(short, long, parse(from_os_str), value_name = "FILE")]
+    project_path: Option<PathBuf>,
+
+    #[clap(subcommand)]
+    command: Command,
+}
+
 fn main() -> Result<()> {
-    let matches = App::new("neptungen")
-        .about("Simple website generator")
-        .version(crate_version!())
-        .arg(
-            Arg::with_name("project_path")
-                .short("p")
-                .long("project_path")
-                .help("Path to the root folder of the website project")
-                .multiple(false)
-                .takes_value(true),
-        )
-        .subcommand(
-            SubCommand::with_name("print-config")
-                .about("Prints the configuration of the config.toml file"),
-        )
-        .subcommand(SubCommand::with_name("build").about("Generate the website"))
-        .arg(
-            Arg::with_name("clean")
-                .short("c")
-                .long("clean")
-                .help("Removes all contents from the output directory before building")
-                .multiple(false)
-                .takes_value(false),
-        )
-        .subcommand(
-            SubCommand::with_name("sync")
-                .about("Used to synchronize the website with an ftp server")
-                .arg(
-                    Arg::with_name("overwrite")
-                        .short("o")
-                        .long("overwrite")
-                        .help("Overwrites all remote files")
-                        .multiple(false)
-                        .takes_value(false),
-                )
-                .arg(
-                    Arg::with_name("with-scratch-build")
-                        .short("n")
-                        .long("with_scratch_build")
-                        .help("Executes a scratch build of the project before executing the sync")
-                        .multiple(false)
-                        .takes_value(false),
-                ),
-        )
-        .get_matches();
-    let path = if matches.is_present("project_path") {
-        fs::canonicalize(matches.value_of("project_path").unwrap_or("."))
-            .expect("could not determine path")
+    let arguments = Arguments::parse();
+
+    let path = if let Some(path) = arguments.project_path {
+        fs::canonicalize(path).expect("could not determine path")
     } else {
         std::env::current_dir()
             .unwrap_or_else(|_| fs::canonicalize(".").expect("could not determine path"))
@@ -82,23 +78,26 @@ fn main() -> Result<()> {
     // load configuration from config.toml if present
     let conf = Config::load(path.as_path())?;
 
-    match matches.subcommand() {
-        ("print-config", Some(_)) => {
+    match arguments.command {
+        Command::PrintConfig => {
             conf.print();
         }
-        ("build", Some(matches)) => {
-            render::build(path.as_path(), &conf, matches.is_present("clean"))?
-        }
-        ("sync", Some(matches)) => sync(
+        Command::Build(build_args) => render::build(path.as_path(), &conf, build_args.clean)?,
+        Command::Sync(sync_args) => sync(
             path.as_path(),
             &conf,
-            matches.is_present("with_scratch_build"),
-            matches.is_present("overwrite"),
+            sync_args.scratch,
+            sync_args.overwrite,
         )?,
-        _ => {
-            println!("{}", matches.usage());
-        }
     };
 
     Ok(())
+}
+
+mod test {
+    #[test]
+    fn verify_app() {
+        use clap::IntoApp;
+        super::Arguments::into_app().debug_assert()
+    }
 }
