@@ -1,8 +1,8 @@
 use crate::last_path_comp_as_str;
 use anyhow::{anyhow, Context, Result};
-use ftp::types::FileType;
-use ftp::FtpError;
-use ftp::FtpStream;
+use suppaftp::{FtpStream, types::FileType, types::FtpError};
+// use ftp::FtpError;
+// use ftp::FtpStream;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::net::TcpStream;
@@ -95,7 +95,8 @@ impl FtpOperations for Ftp {
             .and_then(|s| s.to_str())
             .context("Couldn't determine filename")?;
         self.stream
-            .put(file_name, &mut f)
+            .put_file(file_name, &mut f)
+            .map(|_| ())
             .with_context(|| format!("FTP: Couldn't push file '{}' to server", file_name))
     }
 }
