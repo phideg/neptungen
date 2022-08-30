@@ -28,7 +28,7 @@ impl Ftp {
             stream: FtpStream::connect(connection_str.as_str())?,
         };
         println!("Enter password for ftp server '{}' user '{}'", server, user);
-        let passwd = rpassword::prompt_password_stdout("Password: ")
+        let passwd = rpassword::prompt_password("Password: ")
             .context("Couldn't read password from standard input")?;
         ftp.stream
             .login(user, passwd.as_str())
@@ -117,7 +117,7 @@ impl Sftp {
         let mut session = ssh2::Session::new()?;
         session.set_tcp_stream(tcp);
         session.handshake()?;
-        let passwd = rpassword::prompt_password_stdout("Password: ")
+        let passwd = rpassword::prompt_password("Password: ")
             .context("Couldn't read password from standard input")?;
         session.userauth_password(user, passwd.as_str())?;
         if session.authenticated() {
