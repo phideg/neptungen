@@ -3,6 +3,7 @@ mod filter;
 mod ftp;
 mod macros;
 mod render;
+mod sha1dir;
 mod sync;
 mod template;
 
@@ -10,6 +11,8 @@ use crate::config::Config;
 use crate::sync::Synchronizer;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use config::LogKind;
+use flexi_logger::{FileSpec, Logger, LoggerHandle, WriteMode};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -77,6 +80,20 @@ fn main() -> Result<()> {
 
     // load configuration from config.toml if present
     let conf = Config::load(path.as_path())?;
+
+    let _logger_handle: Option<LoggerHandle> = if let Some(log_kind) = conf.logging {
+        match log_kind {
+            LogKind::Stdout => Some(Logger::try_with_str("warn, neptungen=info")?.start()?),
+            LogKind::File => Some(
+                Logger::try_with_str("warn, neptungen=info")?
+                    .log_to_file(FileSpec::default().directory(path.join(".logs")))
+                    .write_mode(WriteMode::BufferAndFlush)
+                    .start()?,
+            ),
+        }
+    } else {
+        None
+    };
 
     match arguments.command {
         Command::PrintConfig => {

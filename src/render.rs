@@ -113,7 +113,8 @@ fn copy_dirs(path: &Path, target_path: &Path, conf: &Config) {
                 .recursive(true)
                 .create(target_file.parent().expect("Missing parent folder!"))
             {
-                println!("{}", e)
+                println!("{e}");
+                log::error!("{e}")
             }
             if !target_file.exists() || is_file_modified(entry.path(), &target_file) {
                 fs::copy(entry.path(), target_file)
@@ -211,7 +212,6 @@ fn prepare_site_structure(
         });
         nav_entries.push(liquid::model::Value::Object(nav_entry));
     }
-    // dbg!(&nav_entries);
     nav_entries
 }
 

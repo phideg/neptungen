@@ -2,9 +2,15 @@ title = "Lorem Impsum"
 template_dir = ".templates"
 output_dir = "PUBLIC"
 copy_dirs = [ "scripts" ]
+logging = "Stdout"
 
 [gallery]
 img_width = 600
 img_height = 500
 thumb_width = 90
 thumb_height = 90
+
+[sync_settings]
+ftp_server = "127.0.0.1"
+ftp_user = "neptun"
+ftp_target_dir = "/ftp/neptun"

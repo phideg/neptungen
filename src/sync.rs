@@ -1,25 +1,21 @@
-use crate::comp_as_str;
 use crate::config::{Config, FtpProtocol};
 use crate::ftp::{Ftp, FtpOperations, Sftp};
+use crate::{comp_as_str, sha1dir};
 use crate::{filter, last_path_comp_as_str};
-use anyhow::{anyhow, Context, Result};
-use checksums::ops;
-use checksums::ops::{CompareFileResult, CompareResult};
-use checksums::Algorithm;
 
-use std::collections::{BTreeMap, BTreeSet};
+use anyhow::{anyhow, Context, Result};
+use std::collections::BTreeMap;
 use std::fs;
-use std::io::{stderr, stdout};
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
-static CRC_FILE_NAME: &str = "hashsums.crc";
-static OLD_CRC_FILE_NAME: &str = "hashsums_old.crc";
+static CRC_FILE_NAME: &str = "checksums.crc";
+static OLD_CRC_FILE_NAME: &str = "checksums_old.crc";
 
 pub struct Synchronizer {
     server: String,
     ftp_target_dir: PathBuf,
-    hashsums: BTreeMap<String, String>,
     output_path: PathBuf,
     output_path_offset: usize,
     ftp_stream: Box<dyn FtpOperations>,
@@ -48,16 +44,6 @@ impl Synchronizer {
         Ok(Synchronizer {
             server,
             ftp_target_dir: PathBuf::from(sync_settings.ftp_target_dir.as_deref().unwrap_or("/")),
-            hashsums: ops::create_hashes(
-                &output_path,
-                BTreeSet::new(),
-                Algorithm::CRC64,
-                None,
-                false,
-                4,
-                stdout(),
-                &mut stderr(),
-            ),
             output_path_offset: output_path.as_path().components().count(),
             output_path,
             ftp_stream,
@@ -65,11 +51,12 @@ impl Synchronizer {
     }
 
     pub fn execute(&mut self) -> Result<()> {
-        self.create_checksums_file();
+        let checksums = self.create_checksums_file();
 
         // first try to push delta first
-        if let Err(err) = self.push_delta() {
+        if let Err(err) = self.push_delta(&checksums) {
             println!("Couldn't push delta '{}' try to push all instead!", err);
+            log::info!("Couldn't push delta '{}' try to push all instead!", err);
             self.push_all_files()?;
         }
         let crc_file_path = self.output_path.join(CRC_FILE_NAME);
@@ -85,7 +72,7 @@ impl Synchronizer {
         for entry in walker {
             let entry = entry.unwrap();
             if filter::is_directory(&entry) {
-                self.create_and_change_to_directory(entry.path())?;
+                self.create_and_change_to_dir(entry.path())?;
             } else {
                 self.push_file(entry.path())?;
             }
@@ -93,14 +80,14 @@ impl Synchronizer {
         Ok(())
     }
 
-    fn create_checksums_file(&self) {
+    fn create_checksums_file(&self) -> BTreeMap<PathBuf, [u8; 20]> {
         let hash_file_path = PathBuf::from(&self.output_path).join(CRC_FILE_NAME);
-        let hash_file = hash_file_path.to_string_lossy().to_string();
-        ops::write_hashes(
-            &(hash_file, hash_file_path),
-            Algorithm::CRC64,
-            self.hashsums.clone(),
-        );
+        let _ = std::fs::remove_file(&hash_file_path); // ignore if checksums did not exist before
+        let checksums = sha1dir::create_hashes(&self.output_path);
+        let data = serde_json::to_string(&checksums).unwrap();
+        let mut f = std::fs::File::create(&hash_file_path).expect("Unable to create file");
+        std::io::Write::write_all(&mut f, data.as_bytes()).expect("Unable to write data");
+        checksums
     }
 
     fn retrieve_checksums_file(&mut self) -> Result<PathBuf> {
@@ -113,53 +100,101 @@ impl Synchronizer {
         Ok(old_hash_file_path)
     }
 
-    fn push_delta(&mut self) -> Result<()> {
+    fn push_delta(&mut self, checksums: &BTreeMap<PathBuf, [u8; 20]>) -> Result<()> {
         // load old checksums
         let old_hash_file_path = self.retrieve_checksums_file()?;
-        let old_hash_file = old_hash_file_path.to_string_lossy().to_string();
-        let old_hashsums =
-            ops::read_hashes(&mut stderr(), &(old_hash_file, old_hash_file_path.clone()))
-                .map_err(|_| anyhow!("Couldn't read existing checksums"))?;
+        let mut data = String::new();
+        std::fs::File::open(&old_hash_file_path)
+            .and_then(|mut f| f.read_to_string(&mut data))
+            .context("couldn't find or read file 'config.toml'")?;
+        let mut old_checksums: BTreeMap<PathBuf, [u8; 20]> = serde_json::from_str(&data)?;
+
         // ignore if old CRC file could not be deleted
         let _ = fs::remove_file(&old_hash_file_path);
-        // compare checksums
-        let (compare_result, compare_file_result) =
-            ops::compare_hashes(CRC_FILE_NAME, self.hashsums.clone(), old_hashsums)
-                .map_err(|_| anyhow!("Couldn't compare checksum files"))?;
-        for entry in compare_result.into_iter().skip(1) {
-            match entry {
-                CompareResult::FileRemoved(file) => {
-                    println!("Removing file {:?}", file);
-                    let path = self.output_path.join(file.as_str());
-                    if path.is_dir() {
-                        self.remove_directory(&path)?;
-                    } else {
-                        self.remove_file(&path)?;
-                    }
-                }
-                CompareResult::FileAdded(file) => {
-                    println!("Adding file {:?}", file.as_str());
-                    let path = self.output_path.join(file.as_str());
-                    if path.is_dir() {
-                        self.create_and_change_to_directory(path.as_path())?;
-                    } else {
-                        self.push_file(path.as_path())?;
-                    }
-                }
-                _ => {}
-            }
-        }
-        for entry in compare_file_result {
-            if let CompareFileResult::FileDiffers { file, .. } = entry {
-                println!("Updateing file {:?}", file);
-                let path = self.output_path.join(file.as_str());
-                if path.is_dir() {
-                    self.create_and_change_to_directory(path.as_path())?;
+
+        // check for deltas
+        let mut parent_dir: Option<&Path> = None;
+        let mut new_dir_found = false;
+        for (new_path, new_hash) in checksums.iter() {
+            // copy new directory
+            if new_dir_found && new_path.starts_with(parent_dir.unwrap()) {
+                log::info!("Created: {new_path:?}");
+                if new_path.is_dir() {
+                    self.create_and_change_to_dir(new_path)?;
                 } else {
-                    self.push_file(path.as_path())?;
+                    self.push_file(new_path)?;
+                }
+                continue;
+            } else {
+                new_dir_found = false;
+            }
+
+            // skip unchanged entries
+            if let Some(d) = parent_dir {
+                if new_path.starts_with(d) {
+                    log::info!("Unchanged: {new_path:?}");
+                    old_checksums.remove(new_path);
+                    continue;
+                } else {
+                    parent_dir = None;
+                }
+            }
+
+            if let Some(old_hash) = old_checksums.remove(new_path) {
+                // entry exists on remote check wether update is necessary
+                let hash_is_equal = &old_hash == new_hash;
+                if hash_is_equal {
+                    log::info!("Unchanged {new_path:?}");
+                    if new_path.is_dir() {
+                        parent_dir = Some(new_path);
+                    } else {
+                        continue;
+                    }
+                } else {
+                    log::info!("Updated: {new_path:?}");
+                    if new_path.is_dir() {
+                        self.create_and_change_to_dir(new_path)?;
+                    } else {
+                        self.push_file(new_path)?;
+                    }
+                }
+            } else {
+                // entry should not exist on remote but maybe the path still exists
+                // therefore delete file or directory to be sure!
+                if self.remove_file(new_path).is_ok() {
+                    log::error!("Removed?: {new_path:?} - maybe changed file into dir?");
+                } else if self.remove_dir(new_path).is_ok() {
+                    log::error!("Removed?: {new_path:?} - maybe changed dir to filename?");
+                }
+                // now we can safely update the remote
+                log::info!("Created: {new_path:?}");
+                if new_path.is_dir() {
+                    self.create_and_change_to_dir(new_path)?;
+                    parent_dir = Some(new_path);
+                    new_dir_found = true;
+                } else {
+                    self.push_file(new_path)?;
                 }
             }
         }
+
+        // finally delete removed entries from remote
+        parent_dir = None;
+        for old_path in old_checksums.keys() {
+            log::info!("removed {old_path:?}");
+            if self.is_dir(old_path) {
+                if let Some(del_dir) = parent_dir {
+                    self.remove_dir(del_dir)?
+                }
+                parent_dir = Some(old_path);
+            } else {
+                self.remove_file(old_path)?;
+            }
+        }
+        if let Some(del_dir) = parent_dir {
+            self.remove_dir(del_dir)?
+        }
+
         Ok(())
     }
 
@@ -169,7 +204,7 @@ impl Synchronizer {
             let new_dir = comp_as_str!(comp)?;
             to_dir.push(new_dir);
             if self.ftp_stream.cwd(&to_dir).is_err() {
-                println!("Creating target dir '{}'", new_dir);
+                log::info!("Creating '{new_dir}'");
                 self.ftp_stream.mkdir(&to_dir)?;
                 self.ftp_stream.cwd(&to_dir)?;
             }
@@ -177,13 +212,13 @@ impl Synchronizer {
         Ok(to_dir)
     }
 
-    fn create_and_change_to_directory(&mut self, dir: &Path) -> Result<PathBuf> {
+    fn create_and_change_to_dir(&mut self, dir: &Path) -> Result<PathBuf> {
         let mut to_dir = self.create_and_change_to_root()?;
         for comp in dir.components().skip(self.output_path_offset) {
             let new_dir = comp_as_str!(comp)?;
             to_dir.push(new_dir);
             if self.ftp_stream.cwd(&to_dir).is_err() {
-                println!("Creating '{}'", new_dir);
+                log::info!("Creating '{new_dir}'");
                 self.ftp_stream.mkdir(&to_dir)?;
                 self.ftp_stream.cwd(&to_dir)?;
             }
@@ -192,22 +227,30 @@ impl Synchronizer {
     }
 
     fn cd_to_parent_dir(&mut self, src: &Path) -> Result<PathBuf> {
-        let mut parent_dir = PathBuf::from(src);
+        let mut parent_dir = src.to_path_buf();
         if !parent_dir.pop() {
             return Err(anyhow!(
                 "Internal error: couldn't handle path {:?}",
                 parent_dir
             ));
         }
+        self.cd_to_dir(parent_dir.as_path())
+    }
+
+    fn cd_to_dir(&mut self, src: &Path) -> Result<PathBuf> {
         let mut path = self.create_and_change_to_root()?;
-        for comp in parent_dir.components().skip(self.output_path_offset) {
+        for comp in src.components().skip(if src.starts_with(".") {
+            1
+        } else {
+            self.output_path_offset
+        }) {
             path.push(comp_as_str!(comp)?);
             self.ftp_stream.cwd(&path)?;
         }
         Ok(path)
     }
 
-    fn remove_directory(&mut self, dir: &Path) -> Result<()> {
+    fn remove_dir(&mut self, dir: &Path) -> Result<()> {
         let mut src_dir = self.cd_to_parent_dir(dir)?;
         src_dir.push(last_path_comp_as_str!(dir)?);
         self.ftp_stream.rmdir(&src_dir)?;
@@ -222,9 +265,13 @@ impl Synchronizer {
     }
 
     fn push_file(&mut self, file: &Path) -> Result<()> {
-        let mut to_dir = self.create_and_change_to_directory(file.parent().unwrap())?;
+        let mut to_dir = self.create_and_change_to_dir(file.parent().unwrap())?;
         let file_name = file.file_name().and_then(|s| s.to_str()).unwrap();
         to_dir.push(file_name);
         self.ftp_stream.put(&to_dir, file)
+    }
+
+    fn is_dir(&mut self, path: &Path) -> bool {
+        self.cd_to_dir(path).is_ok()
     }
 }

@@ -10,6 +10,7 @@ pub struct Config {
     pub title: Option<String>,
     pub template_dir: Option<String>,
     pub output_dir: Option<String>,
+    pub logging: Option<LogKind>,
     pub remove_numbered_prefix: Option<bool>,
     pub copy_dirs: Option<Vec<String>>,
     pub gallery: Option<Gallery>,
@@ -25,10 +26,16 @@ pub struct Gallery {
     pub thumb_height: u32,
 }
 
-#[derive(PartialEq, Clone, Copy, Debug, Deserialize)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize)]
 pub enum FtpProtocol {
     Ftp,
     Sftp,
+}
+
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize)]
+pub enum LogKind {
+    Stdout,
+    File,
 }
 
 #[derive(Debug, Deserialize)]
@@ -43,17 +50,16 @@ pub struct SyncSettings {
 
 impl Config {
     pub fn load(path: &Path) -> Result<Config> {
-        use std::fs::File;
-        use std::io::Read;
         let mut input = String::new();
-        File::open(path.join("config.toml").as_path())
-            .and_then(|mut f| f.read_to_string(&mut input))
+        std::fs::File::open(path.join("config.toml").as_path())
+            .and_then(|mut f| std::io::Read::read_to_string(&mut f, &mut input))
             .context("couldn't find or read file 'config.toml'")?;
         let mut conf =
             toml::from_str::<Config>(input.as_str()).context("parsing 'config.toml' failed")?;
         conf.resolve_paths(path);
         Ok(conf)
     }
+
     pub fn resolve_paths(&mut self, base_path: &Path) {
         let output_path = base_path.join(&self.output_dir.as_deref().unwrap_or(OUTPUT_FOLDER_NAME));
         self.output_dir = Some(
@@ -110,6 +116,7 @@ impl Config {
             self.copy_dirs = Some(new_copy_dirs);
         }
     }
+
     pub fn print(&self) {
         use term_painter::Attr::Bold;
         use term_painter::ToStyle;
