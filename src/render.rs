@@ -38,7 +38,7 @@ pub fn build(path: &Path, conf: &Config, clean: bool) -> Result<()> {
         fs::remove_dir_all(&output_dir)?;
     }
     let nav_items = prepare_site_structure(path, output_dir.as_path(), conf);
-    // let last_gen_timestmp = set_and_determine_last_build(output_dir.as_path());
+    // let prev_build_timestamp = get_and_set_build_timestamp(output_dir.as_path());
     let entries: Vec<_> = WalkDir::new(path)
         .min_depth(1)
         .into_iter()
@@ -79,7 +79,7 @@ fn is_file_modified(src: &Path, trg: &Path) -> bool {
         if let Ok(trg_meta) = trg.metadata() {
             if let Ok(src_tstmp) = src_meta.modified() {
                 if let Ok(trg_tstmp) = trg_meta.modified() {
-                    return src_tstmp > trg_tstmp;
+                    return src_tstmp != trg_tstmp;
                 }
             }
         }
@@ -124,7 +124,7 @@ fn copy_images(source: &Path, target: &Path) {
         if let Ok(entry) = entry {
             let mut target_file = target.to_path_buf();
             target_file.push(entry.path().file_name().unwrap());
-            if !target_file.exists() {
+            if !target_file.exists() || is_file_modified(entry.path(), &target_file) {
                 fs::copy(entry.path(), target_file.as_path()).unwrap_or_else(|_| {
                     panic!("Error during copy of {:?}", entry.path().display())
                 });
