@@ -54,9 +54,9 @@ impl Synchronizer {
         let checksums = self.create_checksums_file();
 
         // first try to push delta first
-        if let Err(err) = self.push_delta(&checksums) {
-            println!("Couldn't push delta '{}' try to push all instead!", err);
-            log::info!("Couldn't push delta '{}' try to push all instead!", err);
+        if let Err(ref err) = self.push_delta(&checksums) {
+            println!("Couldn't push delta '{err}'");
+            log::info!("Couldn't push delta '{err}'");
             self.push_all_files()?;
         }
         let crc_file_path = self.output_path.join(CRC_FILE_NAME);
@@ -66,6 +66,7 @@ impl Synchronizer {
 
     pub fn push_all_files(&mut self) -> Result<()> {
         println!("Push all files to FTP server {}", &self.server);
+        log::info!("Push all files to FTP server {}", &self.server);
         let walker = WalkDir::new(self.output_path.as_path())
             .min_depth(1)
             .into_iter();

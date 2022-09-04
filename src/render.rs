@@ -38,7 +38,7 @@ pub fn build(path: &Path, conf: &Config, clean: bool) -> Result<()> {
         fs::remove_dir_all(&output_dir)?;
     }
     let nav_items = prepare_site_structure(path, output_dir.as_path(), conf);
-    // let last_gen_timestmp = set_and_determine_last_generation(output_dir.as_path());
+    // let last_gen_timestmp = set_and_determine_last_build(output_dir.as_path());
     let entries: Vec<_> = WalkDir::new(path)
         .min_depth(1)
         .into_iter()
@@ -48,16 +48,8 @@ pub fn build(path: &Path, conf: &Config, clean: bool) -> Result<()> {
     entries.par_iter().for_each(|e| {
         let src = e.as_ref().unwrap();
         let mut target_dir = output_dir.clone();
-        if src.path().parent().is_some() {
-            for comp in src
-                .path()
-                .parent()
-                .unwrap()
-                .components()
-                .skip(path.components().count())
-            {
-                target_dir.push(comp.as_os_str());
-            }
+        if let Some(parent_path) = src.path().parent() {
+            target_dir.extend(parent_path.components().skip(path.components().count()));
         }
         build_page(nav_items.clone(), src, target_dir.as_path(), conf);
     });
@@ -87,7 +79,7 @@ fn is_file_modified(src: &Path, trg: &Path) -> bool {
         if let Ok(trg_meta) = trg.metadata() {
             if let Ok(src_tstmp) = src_meta.modified() {
                 if let Ok(trg_tstmp) = trg_meta.modified() {
-                    return src_tstmp.ne(&trg_tstmp);
+                    return src_tstmp > trg_tstmp;
                 }
             }
         }
@@ -106,15 +98,13 @@ fn copy_dirs(path: &Path, target_path: &Path, conf: &Config) {
         for entry in walker.filter(|e| e.is_ok() && !is_directory(e.as_ref().unwrap())) {
             let entry = entry.unwrap();
             let mut target_file = PathBuf::from(target_path);
-            for comp in entry.path().components().skip(path.components().count()) {
-                target_file.push(comp.as_os_str());
-            }
-            if let Err(e) = DirBuilder::new()
+            target_file.extend(entry.path().components().skip(path.components().count()));
+            if let Err(ref err) = DirBuilder::new()
                 .recursive(true)
                 .create(target_file.parent().expect("Missing parent folder!"))
             {
-                println!("{e}");
-                log::error!("{e}")
+                println!("{err}");
+                log::error!("{err}")
             }
             if !target_file.exists() || is_file_modified(entry.path(), &target_file) {
                 fs::copy(entry.path(), target_file)
@@ -131,12 +121,14 @@ fn copy_images(source: &Path, target: &Path) {
         .follow_links(true)
         .into_iter();
     for entry in walker.filter(|e| e.is_ok() && is_image(e.as_ref().unwrap())) {
-        let mut target_file = PathBuf::from(target);
-        let entry = entry.unwrap();
-        target_file.push(entry.path().file_name().unwrap());
-        if !target_file.exists() {
-            fs::copy(entry.path(), target_file.as_path())
-                .unwrap_or_else(|_| panic!("Error during copy of {:?}", entry.path().display()));
+        if let Ok(entry) = entry {
+            let mut target_file = target.to_path_buf();
+            target_file.push(entry.path().file_name().unwrap());
+            if !target_file.exists() {
+                fs::copy(entry.path(), target_file.as_path()).unwrap_or_else(|_| {
+                    panic!("Error during copy of {:?}", entry.path().display())
+                });
+            }
         }
     }
 }
@@ -179,12 +171,11 @@ fn prepare_site_structure(
             conf,
         ));
         let mut url = PathBuf::new();
-        for comp in entry.path().components().skip(path.components().count()) {
-            url.push(comp.as_os_str());
-        }
+        url.extend(entry.path().components().skip(path.components().count()));
         let target_dir = target_path.join(url.as_path());
-        if let Err(e) = DirBuilder::new().recursive(true).create(target_dir) {
-            println!("{}", e)
+        if let Err(ref err) = DirBuilder::new().recursive(true).create(target_dir) {
+            println!("{err}");
+            log::error!("{err}");
         }
         url.push("index.html");
         let (menu_cmd, level_depth) =
@@ -224,9 +215,9 @@ fn prepare_gallery(
     let mut images = Vec::<liquid::model::Value>::new();
     let img_dir = gallery_settings.img_dir.as_ref().unwrap();
     let target_dir = target_path.join(img_dir.as_str());
-    match DirBuilder::new().recursive(true).create(&target_dir) {
-        Ok(_) => {}
-        Err(e) => println!("{}", e),
+    if let Err(ref err) = DirBuilder::new().recursive(true).create(&target_dir) {
+        println!("{err}");
+        log::error!("{err}");
     }
     let entries = WalkDir::new(
         source_entry
@@ -398,7 +389,7 @@ fn write_html_file(html: &str, target_dir: &Path, entry: &DirEntry) {
         file_path.as_path().display(),
         result.err()
     );
-    println!("written file {}", file_path.display());
+    log::info!("Rendered html {}", file_path.display());
 }
 
 #[cfg(test)]
