@@ -96,9 +96,9 @@ impl Config {
                     .to_owned(),
             );
         }
-        if self.copy_dirs.is_some() {
+        if let Some(ref copy_dirs) = self.copy_dirs {
             let mut new_copy_dirs = Vec::<String>::new();
-            for copy_dir in self.copy_dirs.as_ref().unwrap() {
+            for copy_dir in copy_dirs {
                 let path = base_path.join(copy_dir.as_str());
                 assert!(
                     path.exists(),
@@ -114,6 +114,14 @@ impl Config {
                 );
             }
             self.copy_dirs = Some(new_copy_dirs);
+        }
+        if let Some(ref mut sync_settings) = self.sync_settings {
+            if let Some(ref mut ftp_target_dir) = sync_settings.ftp_target_dir {
+                if !ftp_target_dir.starts_with('/') {
+                    println!("ftp_target_dir {ftp_target_dir} is treated as absolute path!");
+                    ftp_target_dir.insert(0, '/');
+                }
+            }
         }
     }
 

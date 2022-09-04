@@ -1,12 +1,10 @@
 use crate::last_path_comp_as_str;
 use anyhow::{anyhow, Context, Result};
-use suppaftp::{FtpStream, types::FileType, types::FtpError};
-// use ftp::FtpError;
-// use ftp::FtpStream;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::path::{Component, Path};
+use suppaftp::{types::FileType, types::FtpError, FtpStream};
 
 pub trait FtpOperations {
     fn get(&mut self, path: &Path, local_path: &Path) -> Result<()>;
@@ -15,6 +13,7 @@ pub trait FtpOperations {
     fn cwd(&mut self, path: &Path) -> Result<()>;
     fn rmdir(&mut self, path: &Path) -> Result<()>;
     fn mkdir(&mut self, path: &Path) -> Result<()>;
+    fn cwdroot(&mut self) -> Result<()>;
 }
 
 pub struct Ftp {
@@ -98,6 +97,12 @@ impl FtpOperations for Ftp {
             .put_file(file_name, &mut f)
             .map(|_| ())
             .with_context(|| format!("FTP: Couldn't push file '{}' to server", file_name))
+    }
+
+    fn cwdroot(&mut self) -> Result<()> {
+        self.stream
+            .cwd("/")
+            .with_context(|| "FTP: Couldn't change to FTP root dir '/'")
     }
 }
 
@@ -192,6 +197,12 @@ impl FtpOperations for Sftp {
                 )
             });
         })?;
+        Ok(())
+    }
+
+    fn cwdroot(&mut self) -> Result<()> {
+        // this no classic "FTP" changing into dirs to
+        // do operations in them is not necessary
         Ok(())
     }
 }

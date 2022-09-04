@@ -7,7 +7,7 @@ use anyhow::{anyhow, Context, Result};
 use std::collections::BTreeMap;
 use std::fs;
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use walkdir::WalkDir;
 
 static CRC_FILE_NAME: &str = "checksums.crc";
@@ -60,7 +60,7 @@ impl Synchronizer {
             self.push_all_files()?;
         }
         let crc_file_path = self.output_path.join(CRC_FILE_NAME);
-        self.push_file(&crc_file_path)?;
+        self.ftp_push_file(&crc_file_path)?;
         Ok(())
     }
 
@@ -72,9 +72,9 @@ impl Synchronizer {
         for entry in walker {
             let entry = entry.unwrap();
             if filter::is_directory(&entry) {
-                self.create_and_change_to_dir(entry.path())?;
+                self.ftp_create_and_goto_dir(entry.path())?;
             } else {
-                self.push_file(entry.path())?;
+                self.ftp_push_file(entry.path())?;
             }
         }
         Ok(())
@@ -91,7 +91,7 @@ impl Synchronizer {
     }
 
     fn retrieve_checksums_file(&mut self) -> Result<PathBuf> {
-        let mut hash_file_path = self.create_and_change_to_root()?;
+        let mut hash_file_path = self.ftp_goto_target_dir()?;
         hash_file_path.push(CRC_FILE_NAME);
         let old_hash_file_path = PathBuf::from(&self.output_path).join(OLD_CRC_FILE_NAME);
         self.ftp_stream
@@ -120,9 +120,9 @@ impl Synchronizer {
             if new_dir_found && new_path.starts_with(parent_dir.unwrap()) {
                 log::info!("Created: {new_path:?}");
                 if new_path.is_dir() {
-                    self.create_and_change_to_dir(new_path)?;
+                    self.ftp_create_and_goto_dir(new_path)?;
                 } else {
-                    self.push_file(new_path)?;
+                    self.ftp_push_file(new_path)?;
                 }
                 continue;
             } else {
@@ -144,7 +144,7 @@ impl Synchronizer {
                 // entry exists on remote check wether update is necessary
                 let hash_is_equal = &old_hash == new_hash;
                 if hash_is_equal {
-                    log::info!("Unchanged {new_path:?}");
+                    log::info!("Unchanged: {new_path:?}");
                     if new_path.is_dir() {
                         parent_dir = Some(new_path);
                     } else {
@@ -153,27 +153,27 @@ impl Synchronizer {
                 } else {
                     log::info!("Updated: {new_path:?}");
                     if new_path.is_dir() {
-                        self.create_and_change_to_dir(new_path)?;
+                        self.ftp_create_and_goto_dir(new_path)?;
                     } else {
-                        self.push_file(new_path)?;
+                        self.ftp_push_file(new_path)?;
                     }
                 }
             } else {
                 // entry should not exist on remote but maybe the path still exists
                 // therefore delete file or directory to be sure!
-                if self.remove_file(new_path).is_ok() {
+                if self.ftp_remove_file(new_path).is_ok() {
                     log::error!("Removed?: {new_path:?} - maybe changed file into dir?");
-                } else if self.remove_dir(new_path).is_ok() {
+                } else if self.ftp_remove_dir(new_path).is_ok() {
                     log::error!("Removed?: {new_path:?} - maybe changed dir to filename?");
                 }
                 // now we can safely update the remote
                 log::info!("Created: {new_path:?}");
                 if new_path.is_dir() {
-                    self.create_and_change_to_dir(new_path)?;
+                    self.ftp_create_and_goto_dir(new_path)?;
                     parent_dir = Some(new_path);
                     new_dir_found = true;
                 } else {
-                    self.push_file(new_path)?;
+                    self.ftp_push_file(new_path)?;
                 }
             }
         }
@@ -182,25 +182,30 @@ impl Synchronizer {
         parent_dir = None;
         for old_path in old_checksums.keys() {
             log::info!("removed {old_path:?}");
-            if self.is_dir(old_path) {
+            if self.ftp_is_dir(old_path) {
                 if let Some(del_dir) = parent_dir {
-                    self.remove_dir(del_dir)?
+                    self.ftp_remove_dir(del_dir)?
                 }
                 parent_dir = Some(old_path);
             } else {
-                self.remove_file(old_path)?;
+                self.ftp_remove_file(old_path)?;
             }
         }
         if let Some(del_dir) = parent_dir {
-            self.remove_dir(del_dir)?
+            self.ftp_remove_dir(del_dir)?
         }
 
         Ok(())
     }
 
-    fn create_and_change_to_root(&mut self) -> Result<PathBuf> {
+    fn ftp_goto_target_dir(&mut self) -> Result<PathBuf> {
+        self.ftp_stream.cwdroot()?;
         let mut to_dir = PathBuf::new();
-        for comp in self.ftp_target_dir.components() {
+        for comp in self
+            .ftp_target_dir
+            .components()
+            .skip_while(|c| matches!(*c, Component::Prefix(_) | Component::RootDir))
+        {
             let new_dir = comp_as_str!(comp)?;
             to_dir.push(new_dir);
             if self.ftp_stream.cwd(&to_dir).is_err() {
@@ -212,9 +217,13 @@ impl Synchronizer {
         Ok(to_dir)
     }
 
-    fn create_and_change_to_dir(&mut self, dir: &Path) -> Result<PathBuf> {
-        let mut to_dir = self.create_and_change_to_root()?;
-        for comp in dir.components().skip(self.output_path_offset) {
+    fn ftp_create_and_goto_dir(&mut self, dir: &Path) -> Result<PathBuf> {
+        let mut to_dir = self.ftp_goto_target_dir()?;
+        for comp in dir.components().skip(if dir.starts_with(".") {
+            1
+        } else {
+            self.output_path_offset
+        }) {
             let new_dir = comp_as_str!(comp)?;
             to_dir.push(new_dir);
             if self.ftp_stream.cwd(&to_dir).is_err() {
@@ -226,7 +235,7 @@ impl Synchronizer {
         Ok(to_dir)
     }
 
-    fn cd_to_parent_dir(&mut self, src: &Path) -> Result<PathBuf> {
+    fn ftp_goto_parent_dir(&mut self, src: &Path) -> Result<PathBuf> {
         let mut parent_dir = src.to_path_buf();
         if !parent_dir.pop() {
             return Err(anyhow!(
@@ -234,11 +243,11 @@ impl Synchronizer {
                 parent_dir
             ));
         }
-        self.cd_to_dir(parent_dir.as_path())
+        self.ftp_goto_dir(parent_dir.as_path())
     }
 
-    fn cd_to_dir(&mut self, src: &Path) -> Result<PathBuf> {
-        let mut path = self.create_and_change_to_root()?;
+    fn ftp_goto_dir(&mut self, src: &Path) -> Result<PathBuf> {
+        let mut path = self.ftp_goto_target_dir()?;
         for comp in src.components().skip(if src.starts_with(".") {
             1
         } else {
@@ -250,28 +259,28 @@ impl Synchronizer {
         Ok(path)
     }
 
-    fn remove_dir(&mut self, dir: &Path) -> Result<()> {
-        let mut src_dir = self.cd_to_parent_dir(dir)?;
+    fn ftp_remove_dir(&mut self, dir: &Path) -> Result<()> {
+        let mut src_dir = self.ftp_goto_parent_dir(dir)?;
         src_dir.push(last_path_comp_as_str!(dir)?);
         self.ftp_stream.rmdir(&src_dir)?;
         Ok(())
     }
 
-    fn remove_file(&mut self, file: &Path) -> Result<()> {
-        let mut src_dir = self.cd_to_parent_dir(file)?;
+    fn ftp_remove_file(&mut self, file: &Path) -> Result<()> {
+        let mut src_dir = self.ftp_goto_parent_dir(file)?;
         src_dir.push(last_path_comp_as_str!(file)?);
         self.ftp_stream.del(&src_dir)?;
         Ok(())
     }
 
-    fn push_file(&mut self, file: &Path) -> Result<()> {
-        let mut to_dir = self.create_and_change_to_dir(file.parent().unwrap())?;
+    fn ftp_push_file(&mut self, file: &Path) -> Result<()> {
+        let mut to_dir = self.ftp_create_and_goto_dir(file.parent().unwrap())?;
         let file_name = file.file_name().and_then(|s| s.to_str()).unwrap();
         to_dir.push(file_name);
         self.ftp_stream.put(&to_dir, file)
     }
 
-    fn is_dir(&mut self, path: &Path) -> bool {
-        self.cd_to_dir(path).is_ok()
+    fn ftp_is_dir(&mut self, path: &Path) -> bool {
+        self.ftp_goto_dir(path).is_ok()
     }
 }
