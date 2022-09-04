@@ -118,7 +118,7 @@ impl Config {
         if let Some(ref mut sync_settings) = self.sync_settings {
             if let Some(ref mut ftp_target_dir) = sync_settings.ftp_target_dir {
                 if !ftp_target_dir.starts_with('/') {
-                    println!("ftp_target_dir {ftp_target_dir} is treated as absolute path!");
+                    println!("ftp_target_dir contains no absolute path '/' will be prepended to '{ftp_target_dir}'");
                     ftp_target_dir.insert(0, '/');
                 }
             }
