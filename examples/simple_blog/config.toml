@@ -2,7 +2,7 @@ title = "Lorem Impsum"
 template_dir = ".templates"
 output_dir = "PUBLIC"
 copy_dirs = [ "scripts" ]
-logging = "File"
+logging = "Stdout"
 
 [gallery]
 img_width = 600

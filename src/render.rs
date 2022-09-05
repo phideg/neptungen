@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::filter::{
-    contains_markdown_file, contains_markdown_subdir, is_directory, is_image, is_markdown,
+    contains_markdown_file, contains_markdown_subdir, is_directory, is_image, is_modified_markdown,
     is_not_hidden,
 };
 use crate::template;
@@ -15,8 +15,11 @@ use std::fs::DirBuilder;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 use std::vec::Vec;
 use walkdir::{DirEntry, WalkDir};
+
+static BUILD_TIMESTAMP_FILE: &str = "last_build.json";
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MenuCmd {
@@ -38,12 +41,12 @@ pub fn build(path: &Path, conf: &Config, clean: bool) -> Result<()> {
         fs::remove_dir_all(&output_dir)?;
     }
     let nav_items = prepare_site_structure(path, output_dir.as_path(), conf);
-    // let prev_build_timestamp = get_and_set_build_timestamp(output_dir.as_path());
+    let prev_build_timestamp = get_and_set_build_timestamp(output_dir.as_path());
     let entries: Vec<_> = WalkDir::new(path)
         .min_depth(1)
         .into_iter()
         .filter_entry(is_not_hidden)
-        .filter(|e| e.is_ok() && is_markdown(e.as_ref().unwrap()))
+        .filter(|e| e.is_ok() && is_modified_markdown(e.as_ref().unwrap(), &prev_build_timestamp))
         .collect();
     entries.par_iter().for_each(|e| {
         let src = e.as_ref().unwrap();
@@ -55,6 +58,25 @@ pub fn build(path: &Path, conf: &Config, clean: bool) -> Result<()> {
     });
     copy_dirs(path, output_dir.as_path(), conf);
     Ok(())
+}
+
+fn get_and_set_build_timestamp(outdir: &Path) -> SystemTime {
+    let now = std::time::SystemTime::now();
+    let build_timestamp_file = outdir.join(BUILD_TIMESTAMP_FILE);
+    let mut last_build = std::time::SystemTime::UNIX_EPOCH;
+    if let Ok(f) = std::fs::File::open(&build_timestamp_file) {
+        if let Ok(build_tstmp) = serde_json::from_reader(f) {
+            log::info!(
+                "Duration since last build {:#?}",
+                now.duration_since(build_tstmp).unwrap_or_default()
+            );
+            last_build = build_tstmp;
+        }
+    }
+    let f = std::fs::File::create(&build_timestamp_file)
+        .expect("Unable to create {build_timestamp_file:?}");
+    serde_json::to_writer(f, &now).expect("Unable to write data to {build_timestamp_file:?}");
+    last_build
 }
 
 fn build_page(
@@ -120,15 +142,15 @@ fn copy_images(source: &Path, target: &Path) {
         .max_depth(1)
         .follow_links(true)
         .into_iter();
-    for entry in walker.filter(|e| e.is_ok() && is_image(e.as_ref().unwrap())) {
-        if let Ok(entry) = entry {
-            let mut target_file = target.to_path_buf();
-            target_file.push(entry.path().file_name().unwrap());
-            if !target_file.exists() || is_file_modified(entry.path(), &target_file) {
-                fs::copy(entry.path(), target_file.as_path()).unwrap_or_else(|_| {
-                    panic!("Error during copy of {:?}", entry.path().display())
-                });
-            }
+    for entry in walker
+        .filter(|e| e.is_ok() && is_image(e.as_ref().unwrap()))
+        .flatten()
+    {
+        let mut target_file = target.to_path_buf();
+        target_file.push(entry.path().file_name().unwrap());
+        if !target_file.exists() || is_file_modified(entry.path(), &target_file) {
+            fs::copy(entry.path(), target_file.as_path())
+                .unwrap_or_else(|_| panic!("Error during copy of {:?}", entry.path().display()));
         }
     }
 }

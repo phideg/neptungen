@@ -85,9 +85,8 @@ impl Synchronizer {
         let hash_file_path = PathBuf::from(&self.output_path).join(CRC_FILE_NAME);
         let _ = std::fs::remove_file(&hash_file_path); // ignore if checksums did not exist before
         let checksums = sha1dir::create_hashes(&self.output_path);
-        let data = serde_json::to_string(&checksums).unwrap();
-        let mut f = std::fs::File::create(&hash_file_path).expect("Unable to create file");
-        std::io::Write::write_all(&mut f, data.as_bytes()).expect("Unable to write data");
+        let f = std::fs::File::create(&hash_file_path).expect("Unable to create file");
+        serde_json::to_writer(f, &checksums).expect("Unable to write data");
         checksums
     }
 
