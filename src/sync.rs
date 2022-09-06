@@ -51,7 +51,7 @@ impl Synchronizer {
     }
 
     pub fn execute(&mut self) -> Result<()> {
-        let checksums = self.create_checksums_file();
+        let checksums = self.create_checksums_file()?;
 
         // first try to push delta first
         if let Err(ref err) = self.push_delta(&checksums) {
@@ -81,13 +81,13 @@ impl Synchronizer {
         Ok(())
     }
 
-    fn create_checksums_file(&self) -> BTreeMap<PathBuf, [u8; 20]> {
+    fn create_checksums_file(&self) -> Result<BTreeMap<PathBuf, [u8; 20]>> {
         let hash_file_path = PathBuf::from(&self.output_path).join(CRC_FILE_NAME);
         let _ = std::fs::remove_file(&hash_file_path); // ignore if checksums did not exist before
-        let checksums = sha1dir::create_hashes(&self.output_path);
+        let checksums = sha1dir::create_hashes(&self.output_path)?;
         let f = std::fs::File::create(&hash_file_path).expect("Unable to create file");
         serde_json::to_writer(f, &checksums).expect("Unable to write data");
-        checksums
+        Ok(checksums)
     }
 
     fn retrieve_checksums_file(&mut self) -> Result<PathBuf> {

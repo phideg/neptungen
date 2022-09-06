@@ -9,32 +9,20 @@ use std::collections::BTreeMap;
 use std::env;
 use std::fmt::{self, Display};
 use std::fs::{File, Metadata};
-use std::io::{self, Write};
 use std::path::{Path, PathBuf};
-use std::process;
-use std::sync::Once;
 
 lazy_static! {
     static ref START_DIR: PathBuf = PathBuf::from(".");
 }
 
-fn die<P: AsRef<Path>, E: Display>(path: P, error: E) -> ! {
-    static DIE: Once = Once::new();
-
-    DIE.call_once(|| {
-        let path = path.as_ref().display();
-        let _ = writeln!(io::stderr(), "sha1sum: {}: {}", path, error);
-        process::exit(1);
-    });
-
-    unreachable!()
-}
-
-pub(crate) fn create_hashes(dir: &Path) -> BTreeMap<PathBuf, [u8; 20]> {
+pub(crate) fn create_hashes(dir: &Path) -> Result<BTreeMap<PathBuf, [u8; 20]>> {
     debug_assert!(dir.is_absolute());
     init_thread_pool();
-    let checksums = build_checksums(dir);
-    checksums.into()
+    let checksums = build_checksums(dir)?;
+    for err in checksums.errors {
+        log::error!("{err:#?}");
+    }
+    Ok(checksums.bytes_map)
 }
 
 fn init_thread_pool() {
@@ -45,40 +33,59 @@ fn init_thread_pool() {
         .unwrap();
 }
 
-struct Checksums {
-    bytes_map: Mutex<BTreeMap<PathBuf, [u8; 20]>>,
+pub struct Checksums {
+    bytes_map: BTreeMap<PathBuf, [u8; 20]>,
+    errors: Vec<String>,
 }
 
 impl Checksums {
     fn new() -> Self {
         Checksums {
-            bytes_map: Mutex::new(BTreeMap::new()),
+            bytes_map: BTreeMap::new(),
+            errors: Vec::new(),
         }
     }
 }
 
-impl Display for Checksums {
+struct ChecksumsBuilder {
+    data: Mutex<Checksums>,
+}
+
+impl Display for ChecksumsBuilder {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let map = self.bytes_map.lock();
-        for entry in map.iter() {
+        let data = self.data.lock();
+        for entry in data.bytes_map.iter() {
             write!(f, "{:?} ", entry.0)?;
             for &byte in entry.1 {
                 write!(f, "{:02x}", byte)?;
+            }
+            writeln!(f).unwrap();
+        }
+        if !data.errors.is_empty() {
+            writeln!(f, "Following errors occurred: ").unwrap();
+            for err in data.errors.iter() {
+                writeln!(f, "{err:#?}").unwrap();
             }
         }
         Ok(())
     }
 }
 
-impl Checksums {
+impl ChecksumsBuilder {
+    fn new() -> Self {
+        ChecksumsBuilder {
+            data: Mutex::new(Checksums::new()),
+        }
+    }
     fn put(&self, path: &Path, hash: Sha1) {
         if path == START_DIR.as_path() {
             return;
         }
         let path = path.to_owned();
         {
-            let mut map = self.bytes_map.lock();
-            map.entry(path.clone())
+            let mut data = self.data.lock();
+            data.bytes_map
+                .entry(path.clone())
                 .and_modify(|lhs| {
                     for (lhash, rhash) in lhs.iter_mut().zip(hash.clone().finalize()) {
                         *lhash ^= rhash;
@@ -87,47 +94,50 @@ impl Checksums {
                 .or_insert_with(|| hash.clone().finalize().into());
         }
         if let Some(parent_path) = path.parent() {
-            // TODO: handle errors
             self.put(parent_path, hash);
         }
     }
-
-    fn into(self) -> BTreeMap<PathBuf, [u8; 20]> {
-        self.bytes_map.into_inner()
+    fn report_error(&self, error: String) {
+        let mut data = self.data.lock();
+        data.errors.push(error);
+    }
+    fn into(self) -> Checksums {
+        self.data.into_inner()
     }
 }
 
-fn build_checksums(start_path: &Path) -> Checksums {
-    // TODO: error handling
-    env::set_current_dir(start_path).unwrap();
-    let checksums = Checksums::new();
-    rayon::scope(|scope| entry(scope, &checksums, START_DIR.as_path()));
-    checksums
+fn build_checksums(start_path: &Path) -> Result<Checksums> {
+    env::set_current_dir(start_path)?;
+    let checksums_builder = ChecksumsBuilder::new();
+    rayon::scope(|scope| entry(scope, &checksums_builder, START_DIR.as_path()));
+    Ok(checksums_builder.into())
 }
 
-fn entry<'scope>(scope: &Scope<'scope>, checksums: &'scope Checksums, path: &Path) {
-    let metadata = match path.symlink_metadata() {
-        Ok(metadata) => metadata,
-        Err(error) => die(path, error),
-    };
-
-    let file_type = metadata.file_type();
-    let result = if file_type.is_file() {
-        file(checksums, path, metadata)
-    } else if file_type.is_symlink() {
-        symlink(checksums, path)
-    } else if file_type.is_dir() {
-        dir(scope, checksums, path)
+fn entry<'scope>(scope: &Scope<'scope>, checksums: &'scope ChecksumsBuilder, path: &Path) {
+    let result = if let Ok(metadata) = path.symlink_metadata() {
+        let file_type = metadata.file_type();
+        if file_type.is_file() {
+            file(checksums, path, metadata)
+        } else if file_type.is_symlink() {
+            symlink(checksums, path)
+        } else if file_type.is_dir() {
+            dir(scope, checksums, path)
+        } else {
+            Err(anyhow::anyhow!("File type of {:#?} not supported", path))
+        }
     } else {
-        die(path, "Unsupported file type");
+        Err(anyhow::anyhow!(
+            "Could not read file metadata of {:#?}",
+            path
+        ))
     };
 
     if let Err(error) = result {
-        die(path, error);
+        checksums.report_error(format!("sha1sum: {:#?}: {}", path, error));
     }
 }
 
-fn file(checksums: &Checksums, path: &Path, metadata: Metadata) -> Result<()> {
+fn file(checksums: &ChecksumsBuilder, path: &Path, metadata: Metadata) -> Result<()> {
     let mut sha = begin(path, b'f');
 
     // Enforced by memmap: "memory map must have a non-zero length"
@@ -141,7 +151,7 @@ fn file(checksums: &Checksums, path: &Path, metadata: Metadata) -> Result<()> {
     Ok(())
 }
 
-fn symlink(checksums: &Checksums, path: &Path) -> Result<()> {
+fn symlink(checksums: &ChecksumsBuilder, path: &Path) -> Result<()> {
     let mut sha = begin(path, b'l');
     sha.update(path.read_link()?.to_string_lossy().as_bytes());
     checksums.put(path, sha);
@@ -149,7 +159,11 @@ fn symlink(checksums: &Checksums, path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn dir<'scope>(scope: &Scope<'scope>, checksums: &'scope Checksums, path: &Path) -> Result<()> {
+fn dir<'scope>(
+    scope: &Scope<'scope>,
+    checksums: &'scope ChecksumsBuilder,
+    path: &Path,
+) -> Result<()> {
     let sha = begin(path, b'd');
     checksums.put(path, sha);
 
