@@ -36,6 +36,11 @@ impl fmt::Display for MenuCmd {
 }
 
 pub fn build(path: &Path, conf: &Config, clean: bool) -> Result<()> {
+    log::info!(
+        "[{}] Building project `{}`",
+        chrono::Local::now(),
+        conf.title.as_deref().unwrap_or("unknown"),
+    );
     let output_dir = PathBuf::from(conf.output_dir.as_ref().unwrap());
     if clean {
         fs::remove_dir_all(&output_dir)?;
@@ -61,9 +66,9 @@ pub fn build(path: &Path, conf: &Config, clean: bool) -> Result<()> {
 }
 
 fn get_and_set_build_timestamp(outdir: &Path) -> SystemTime {
-    let now = std::time::SystemTime::now();
+    let now = SystemTime::now();
     let build_timestamp_file = outdir.join(BUILD_TIMESTAMP_FILE);
-    let mut last_build = std::time::SystemTime::UNIX_EPOCH;
+    let mut last_build = SystemTime::UNIX_EPOCH;
     if let Ok(f) = std::fs::File::open(&build_timestamp_file) {
         if let Ok(build_tstmp) = serde_json::from_reader(f) {
             log::info!(
