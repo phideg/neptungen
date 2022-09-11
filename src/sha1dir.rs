@@ -17,20 +17,14 @@ lazy_static! {
 
 pub(crate) fn create_hashes(dir: &Path) -> Result<BTreeMap<PathBuf, [u8; 20]>> {
     debug_assert!(dir.is_absolute());
-    init_thread_pool();
+    ThreadPoolBuilder::new()
+        .num_threads(cmp::min(std::thread::available_parallelism()?.get(), 8))
+        .build_global()?;
     let checksums = build_checksums(dir)?;
     for err in checksums.errors {
         log::error!("{err:#?}");
     }
     Ok(checksums.bytes_map)
-}
-
-fn init_thread_pool() {
-    //TODO: handle error!
-    ThreadPoolBuilder::new()
-        .num_threads(cmp::min(num_cpus::get(), 8))
-        .build_global()
-        .unwrap();
 }
 
 pub struct Checksums {

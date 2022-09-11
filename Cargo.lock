@@ -739,7 +739,6 @@ dependencies = [
  "liquid",
  "log",
  "memmap",
- "num_cpus",
  "parking_lot 0.12.1",
  "pulldown-cmark",
  "rayon",
