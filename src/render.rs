@@ -90,12 +90,24 @@ fn build_page(
     target_dir: &Path,
     conf: &Config,
 ) {
+    let page_name = if let Some(name) = target_dir.file_name() {
+        name.to_str().unwrap_or("None")
+    } else {
+        "None"
+    };
     let page_content = convert_markdown_to_html(entry.path());
     let html = if entry.file_name() == "gallery.md" {
         let images = prepare_gallery(entry, target_dir, conf);
-        apply_gallery_template(&page_content, nav_items, images, entry.depth(), conf)
+        apply_gallery_template(
+            &page_content,
+            nav_items,
+            entry.depth(),
+            conf,
+            page_name,
+            images,
+        )
     } else {
-        apply_page_template(&page_content, nav_items, entry.depth(), conf)
+        apply_page_template(&page_content, nav_items, entry.depth(), conf, page_name)
     };
     write_html_file(&html, target_dir, entry);
     copy_images(entry.path().parent().unwrap(), target_dir);
@@ -320,9 +332,10 @@ fn prepare_gallery(
 fn apply_gallery_template(
     content: &str,
     nav_items: Vec<liquid::model::Value>,
-    images: Vec<liquid::model::Value>,
     depth: usize,
     conf: &Config,
+    page_name: &str,
+    images: Vec<liquid::model::Value>,
 ) -> String {
     let template = liquid::ParserBuilder::with_stdlib()
         .build()
@@ -349,6 +362,10 @@ fn apply_gallery_template(
         liquid::model::Value::scalar(content.to_owned()),
     );
     context.insert("images".into(), liquid::model::Value::Array(images));
+    context.insert(
+        "page_name".into(),
+        liquid::model::Value::scalar(page_name.to_owned()),
+    );
     match template.render(&context) {
         Ok(output) => output,
         Err(error) => panic!("Could not render Page template: {}", error),
@@ -360,6 +377,7 @@ fn apply_page_template(
     nav_items: Vec<liquid::model::Value>,
     depth: usize,
     conf: &Config,
+    page_name: &str,
 ) -> String {
     let template = liquid::ParserBuilder::with_stdlib()
         .build()
@@ -379,6 +397,7 @@ fn apply_page_template(
         },
         "nav_items" : liquid::model::Value::Array(nav_items),
         "content" : content.to_owned(),
+        "page_name" : page_name.to_owned()
     });
     match template.render(&context) {
         Ok(output) => output,
