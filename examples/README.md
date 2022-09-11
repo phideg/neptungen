@@ -23,3 +23,24 @@ The FTP server can be stopped with the following docker command
 ```bash
 docker container kill ftp
 ```
+
+## SFTP server setup (Windows)
+
+Create folder `sftp_tmp` in root folder of your windows user.
+
+Now SFTP server can be started with docker on the localhost:
+
+```ps1
+docker.exe run --rm -v /c/Users/youruser/sftp_tmp:/home/neptun/upload -p 2222:22 -d atmoz/sftp neptun:neptun
+```
+
+Make sure to adapt the `config.toml` in `examples/simple_blog`
+
+```toml
+  [sync_settings]
+  ftp_server = "127.0.0.1"
+  ftp_protocol = "Sftp"
+  ftp_target_dir = "/upload"
+  ftp_port = 2222
+  ftp_user = "neptun"
+```
