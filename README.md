@@ -82,7 +82,7 @@ By default the generated output can be found in the `_output` directory.
 
 Galleries are similar to normal pages. Create an `images` sub directory within any of your page directories. Copy or symlink all relevant images into it. Create a markdown file named `gallery.md`. Neptungen will then call the gallery.liq template to generate the gallery page.
 
-By defailt the images are resized to 800x600 pixels and the corresponding thumbs nails are set to 90x90 pixels. Those default settings can be overwritten via the configuration file `config.toml`.s
+By default the images are resized to 800x600 pixels and the corresponding thumbs nails are set to 90x90 pixels. Those default settings can be overwritten via the configuration file `config.toml`.
 
 # Tips & Tricks
 
@@ -93,14 +93,7 @@ rendered.
 
 # Sync
 
-__ftp__
-So far you can only synchronize your static content with an FTP server. See ftp settings in `config.toml`. Currently neptungen will always try to sync your static website at the root of your FTP.
-
-ToDo:
-
-- [X] Allow sync to remote subdir
-- [X] Support SFTP
-- [ ] Support SSH
+Instead of manually deploying your web page you can use the `sync` subcommand of neptungen to do the job. The sync command will update a local `checksums.crc` file. It is located in the `_output` folder of your project. Neptungen will then download the checksums.crc file from your remote server. In the next step the checksum files are compared in order to determine the delta. During this process the delta will be transferred to your remote server. The transfer will be done either by FTP or SFTP depending on the ftp settings in your `config.toml`.
 
 # config.toml
 
@@ -121,7 +114,7 @@ thumb_height = 90
 
 [sync_settings]
 ftp_server = "my.ftpserver.com"
-ftp_port = 21
+ftp_protocol = "Sftp"
 ftp_user = "my_ftp_user"
 
 ```
@@ -150,9 +143,10 @@ Neptungen provides the following liquid variables:
 - __{{ title }}__
 - __{{ content }}__
 - __{{ root_dir }}__
+- __{{ page_name }}__
 
  The {{root_dir}} variable contains a relative path to your web root depending on the depth of your site structure.
- The other variables are quite self explanatory. A little more complex is the `nav_items` collection. The following example template code show how you can use the collection to build a simple list based menu:
+ The other variables are quite self explanatory. A little more complex is the `{{ nav_items }}` collection. The following example template code show how you can use the collection to build a simple list based menu:
 
 ```html
 <nav id="main-nav" role="navigation">
