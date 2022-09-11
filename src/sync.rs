@@ -34,8 +34,10 @@ impl Synchronizer {
             .context("'config.toml' sync settings not found")?;
         let server = String::from(&sync_settings.ftp_server);
         let user = &sync_settings.ftp_user;
-        let port = sync_settings.ftp_port.unwrap_or(21);
         let protocol = sync_settings.ftp_protocol.unwrap_or(FtpProtocol::Ftp);
+        let port = sync_settings
+            .ftp_port
+            .unwrap_or(if protocol == FtpProtocol::Ftp { 21 } else { 22 });
         let ftp_stream: Box<dyn FtpOperations> = if protocol == FtpProtocol::Ftp {
             Box::new(Ftp::new(&server, port, user)?)
         } else {
