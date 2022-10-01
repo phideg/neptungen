@@ -61,7 +61,7 @@ enum Command {
 #[clap(author, version)]
 struct Arguments {
     /// Specify the path to the project. By default current directory is used.
-    #[clap(short, long, parse(from_os_str), value_name = "FILE")]
+    #[clap(short, long, value_name = "FILE")]
     project_path: Option<PathBuf>,
 
     #[clap(subcommand)]
