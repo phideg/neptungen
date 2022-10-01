@@ -48,7 +48,6 @@ struct Sync {
 #[derive(Subcommand)]
 enum Command {
     /// Print the configuration of the config.toml file
-    #[clap(alias = "print-config")]
     PrintConfig,
     /// Generate the website
     Build(Build),
@@ -114,7 +113,7 @@ fn main() -> Result<()> {
 mod test {
     #[test]
     fn verify_app() {
-        use clap::IntoApp;
-        super::Arguments::into_app().debug_assert()
+        use clap::CommandFactory;
+        super::Arguments::command().debug_assert()
     }
 }
