@@ -11,7 +11,6 @@ jobs:
     env:
       # Emit backtraces on panics.
       RUST_BACKTRACE: 1
-    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         build:
@@ -29,6 +28,7 @@ jobs:
         - build: win-msvc
           os: windows-2019
           rust: stable
+    runs-on: ${{ matrix.os }}
 
     steps:
     - name: Checkout repository

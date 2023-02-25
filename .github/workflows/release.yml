@@ -56,7 +56,6 @@ jobs:
   build-release:
     name: build-release
     needs: ['create-release']
-    runs-on: ${{ matrix.os }}
     env:
       RUST_BACKTRACE: 1
     strategy:
@@ -79,6 +78,7 @@ jobs:
           os: windows-2019
           rust: stable
           target: i686-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
 
     steps:
     - name: Checkout repository
