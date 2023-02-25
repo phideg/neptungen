@@ -13,11 +13,7 @@ jobs:
       RUST_BACKTRACE: 1
     strategy:
       matrix:
-        build:
-        - stable
-        - beta
-        - macos
-        - win-msvc
+        build: [stable, macos, win-msvc]
         include:
         - build: stable
           os: ubuntu-latest
