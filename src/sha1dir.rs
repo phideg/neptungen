@@ -172,8 +172,8 @@ fn dir<'scope>(
 fn begin(path: &Path, kind: u8) -> Sha1 {
     let mut sha = Sha1::new();
     let path_bytes = path.to_string_lossy();
-    sha.update(&[kind]);
-    sha.update(&(path_bytes.len() as u32).to_le_bytes());
+    sha.update([kind]);
+    sha.update((path_bytes.len() as u32).to_le_bytes());
     sha.update(path_bytes.as_bytes());
     sha
 }

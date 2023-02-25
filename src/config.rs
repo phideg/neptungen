@@ -61,7 +61,7 @@ impl Config {
     }
 
     pub fn resolve_paths(&mut self, base_path: &Path) {
-        let output_path = base_path.join(&self.output_dir.as_deref().unwrap_or(OUTPUT_FOLDER_NAME));
+        let output_path = base_path.join(self.output_dir.as_deref().unwrap_or(OUTPUT_FOLDER_NAME));
         self.output_dir = Some(
             output_path
                 .as_path()
@@ -81,7 +81,7 @@ impl Config {
             self.gallery.as_mut().unwrap().img_dir = Some(GALLERY_FOLDER_NAME.to_string());
         }
         if self.template_dir.is_some() {
-            let template_path = base_path.join(&self.template_dir.as_ref().unwrap().as_str());
+            let template_path = base_path.join(self.template_dir.as_ref().unwrap().as_str());
             assert!(
                 template_path.exists(),
                 "The template directory '{}' does not exist in your project '{}'",

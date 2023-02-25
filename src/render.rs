@@ -456,8 +456,7 @@ mod tests {
 
     #[test]
     fn remove_numbered_prefix_explicit_true() {
-        let mut conf = Config::default();
-        conf.remove_numbered_prefix = Some(true);
+        let conf = Config { remove_numbered_prefix: Some(true), ..Default::default() };
         assert_eq!(remove_number_prefix("name", &conf), "name");
         assert_eq!(remove_number_prefix("foo_name", &conf), "foo_name");
         assert_eq!(remove_number_prefix("foo_1_name", &conf), "foo_1_name");
@@ -470,8 +469,7 @@ mod tests {
 
     #[test]
     fn remove_numbered_prefix_explicit_false() {
-        let mut conf = Config::default();
-        conf.remove_numbered_prefix = Some(false);
+        let conf = Config { remove_numbered_prefix: Some(false), ..Default::default() };
         assert_eq!(remove_number_prefix("name", &conf), "name");
         assert_eq!(remove_number_prefix("foo_name", &conf), "foo_name");
         assert_eq!(remove_number_prefix("foo_1_name", &conf), "foo_1_name");
