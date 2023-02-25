@@ -64,7 +64,7 @@ jobs:
         build: [linux, macos, win-msvc, win32-msvc]
         include:
         - build: linux
-          os: ubuntu-18.04
+          os: ubuntu-latest
           rust: stable
           target: x86_64-unknown-linux-musl
         - build: macos
@@ -82,20 +82,16 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         fetch-depth: 1
 
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: ${{ matrix.rust }}
-        profile: minimal
-        override: true
-        target: ${{ matrix.target }}
+      run: |
+        rustup update ${{ matrix.rust }} && rustup default ${{ matrix.rust }}
 
     - name: Get release download URL
-      uses: actions/download-artifact@v1
+      uses: actions/download-artifact@v3
       with:
         name: artifacts
         path: artifacts

@@ -34,27 +34,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: ${{ matrix.rust }}
-        profile: minimal
-        override: true        
+      run: |
+        rustup update ${{ matrix.rust }} && rustup default ${{ matrix.rust }}
     - name: Build neptungen and all crates
-      run: cargo build --verbose --all
-
-  rustfmt:
-    name: rustfmt & clippy
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
-        profile: minimal
-        components: rustfmt
+      run: |
+        cargo build --verbose --all
     - name: Check formatting
       run: |
         cargo fmt --all -- --check
