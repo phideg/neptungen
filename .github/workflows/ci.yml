@@ -1,4 +1,3 @@
-
 name: ci
 on:
   pull_request:
@@ -22,11 +21,8 @@ jobs:
         - win-msvc
         include:
         - build: stable
-          os: ubuntu-18.04
+          os: ubuntu-latest
           rust: stable
-        - build: beta
-          os: ubuntu-18.04
-          rust: beta
         - build: macos
           os: macos-latest
           rust: stable
@@ -36,7 +32,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
@@ -47,11 +43,11 @@ jobs:
       run: cargo build --verbose --all
 
   rustfmt:
-    name: rustfmt
-    runs-on: ubuntu-18.04
+    name: rustfmt & clippy
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
@@ -62,3 +58,7 @@ jobs:
     - name: Check formatting
       run: |
         cargo fmt --all -- --check
+    - name: Clippy checks
+      run: |
+        cargo clippy
+
