@@ -10,7 +10,7 @@ name = "neptungen"
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
-chrono = "0.4"
+chrono = { version = "0.4", default-features = false }
 lazy_static = "1"
 liquid = "0.26"
 log = "0.4"
