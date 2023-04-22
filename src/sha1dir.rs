@@ -34,7 +34,7 @@ pub struct Checksums {
 
 impl Checksums {
     fn new() -> Self {
-        Checksums {
+        Self {
             bytes_map: BTreeMap::new(),
             errors: Vec::new(),
         }
@@ -48,10 +48,10 @@ struct ChecksumsBuilder {
 impl Display for ChecksumsBuilder {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let data = self.data.lock();
-        for entry in data.bytes_map.iter() {
+        for entry in &data.bytes_map {
             write!(f, "{:?} ", entry.0)?;
             for &byte in entry.1 {
-                write!(f, "{:02x}", byte)?;
+                write!(f, "{byte:02x}")?;
             }
             writeln!(f).unwrap();
         }
@@ -67,7 +67,7 @@ impl Display for ChecksumsBuilder {
 
 impl ChecksumsBuilder {
     fn new() -> Self {
-        ChecksumsBuilder {
+        Self {
             data: Mutex::new(Checksums::new()),
         }
     }
@@ -111,7 +111,7 @@ fn entry<'scope>(scope: &Scope<'scope>, checksums: &'scope ChecksumsBuilder, pat
     let result = if let Ok(metadata) = path.symlink_metadata() {
         let file_type = metadata.file_type();
         if file_type.is_file() {
-            file(checksums, path, metadata)
+            file(checksums, path, &metadata)
         } else if file_type.is_symlink() {
             symlink(checksums, path)
         } else if file_type.is_dir() {
@@ -127,11 +127,11 @@ fn entry<'scope>(scope: &Scope<'scope>, checksums: &'scope ChecksumsBuilder, pat
     };
 
     if let Err(error) = result {
-        checksums.report_error(format!("sha1sum: {:#?}: {}", path, error));
+        checksums.report_error(format!("sha1sum: {path:#?}: {error}"));
     }
 }
 
-fn file(checksums: &ChecksumsBuilder, path: &Path, metadata: Metadata) -> Result<()> {
+fn file(checksums: &ChecksumsBuilder, path: &Path, metadata: &Metadata) -> Result<()> {
     let mut sha = begin(path, b'f');
 
     // Enforced by memmap: "memory map must have a non-zero length"

@@ -147,7 +147,7 @@ fn copy_dirs(path: &Path, target_path: &Path, conf: &Config) {
             }
             if !target_file.exists() || is_file_modified(entry.path(), &target_file) {
                 fs::copy(entry.path(), target_file)
-                    .unwrap_or_else(|_| panic!("error during copy of {:?}", copy_dir));
+                    .unwrap_or_else(|_| panic!("error during copy of {copy_dir:?}"));
             }
         }
     }
@@ -340,7 +340,7 @@ fn apply_gallery_template(
     let template = liquid::ParserBuilder::with_stdlib()
         .build()
         .unwrap()
-        .parse(template::load_gallery_template(conf).as_str())
+        .parse(template::load_gallery(conf).as_str())
         .expect("Gallery template could not be parsed!");
     let mut root_dir = String::new();
     for _ in 1..depth {
@@ -368,7 +368,7 @@ fn apply_gallery_template(
     );
     match template.render(&context) {
         Ok(output) => output,
-        Err(error) => panic!("Could not render Page template: {}", error),
+        Err(error) => panic!("Could not render Page template: {error}"),
     }
 }
 
@@ -382,7 +382,7 @@ fn apply_page_template(
     let template = liquid::ParserBuilder::with_stdlib()
         .build()
         .unwrap()
-        .parse(template::load_page_template(conf).as_str())
+        .parse(template::load_page(conf).as_str())
         .expect("Page template could not be parsed!");
     let mut root_dir = String::from("./");
     for _ in 1..depth {
@@ -401,7 +401,7 @@ fn apply_page_template(
     });
     match template.render(&context) {
         Ok(output) => output,
-        Err(error) => panic!("Could not render Page template: {}", error),
+        Err(error) => panic!("Could not render Page template: {error}"),
     }
 }
 

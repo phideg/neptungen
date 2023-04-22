@@ -20,7 +20,7 @@ fn load_template(name: &str, conf: &Config) -> Option<String> {
     })
 }
 
-pub fn load_page_template(conf: &Config) -> String {
+pub fn load_page(conf: &Config) -> String {
     load_template("page.liq", conf).unwrap_or_else(|| {
         r#"
 <!DOCTYPE html>
@@ -123,7 +123,7 @@ html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif}
     })
 }
 
-pub fn load_gallery_template(conf: &Config) -> String {
+pub fn load_gallery(conf: &Config) -> String {
     load_template("gallery.liq", conf).unwrap_or_else(|| {
         r#"
 <!DOCTYPE html>

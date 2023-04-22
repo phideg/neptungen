@@ -49,13 +49,13 @@ pub struct SyncSettings {
 }
 
 impl Config {
-    pub fn load(path: &Path) -> Result<Config> {
+    pub fn load(path: &Path) -> Result<Self> {
         let mut input = String::new();
         std::fs::File::open(path.join("config.toml").as_path())
             .and_then(|mut f| std::io::Read::read_to_string(&mut f, &mut input))
             .context("couldn't find or read file 'config.toml'")?;
         let mut conf =
-            toml::from_str::<Config>(input.as_str()).context("parsing 'config.toml' failed")?;
+            toml::from_str::<Self>(input.as_str()).context("parsing 'config.toml' failed")?;
         conf.resolve_paths(path);
         Ok(conf)
     }

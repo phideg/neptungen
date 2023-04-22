@@ -5,6 +5,7 @@ use crate::{filter, last_path_comp_as_str};
 
 use anyhow::{anyhow, Context, Result};
 use std::collections::BTreeMap;
+use std::ffi::OsStr;
 use std::fs;
 use std::io::Read;
 use std::path::{Component, Path, PathBuf};
@@ -22,7 +23,7 @@ pub struct Synchronizer {
 }
 
 impl Synchronizer {
-    pub fn new(conf: &Config) -> Result<Synchronizer> {
+    pub fn new(conf: &Config) -> Result<Self> {
         let output_path = PathBuf::from(
             conf.output_dir
                 .as_ref()
@@ -43,7 +44,7 @@ impl Synchronizer {
         } else {
             Box::new(Sftp::new(&server, port, user)?)
         };
-        Ok(Synchronizer {
+        Ok(Self {
             server,
             ftp_target_dir: PathBuf::from(sync_settings.ftp_target_dir.as_deref().unwrap_or("/")),
             output_path_offset: output_path.as_path().components().count(),
@@ -85,7 +86,7 @@ impl Synchronizer {
 
     fn create_checksums_file(&self) -> Result<BTreeMap<PathBuf, [u8; 20]>> {
         let hash_file_path = PathBuf::from(&self.output_path).join(CRC_FILE_NAME);
-        let _ = std::fs::remove_file(&hash_file_path); // ignore if checksums did not exist before
+        std::fs::remove_file(&hash_file_path).ok(); // ignore if checksums did not exist before
         let checksums = sha1dir::create_hashes(&self.output_path)?;
         let f = std::fs::File::create(&hash_file_path).expect("Unable to create file");
         serde_json::to_writer(f, &checksums).expect("Unable to write data");
@@ -111,8 +112,8 @@ impl Synchronizer {
             .context("couldn't find or read file 'config.toml'")?;
         let mut old_checksums: BTreeMap<PathBuf, [u8; 20]> = serde_json::from_str(&data)?;
 
-        // ignore if old CRC file could not be deleted
-        let _ = fs::remove_file(&old_hash_file_path);
+        // convert Result to Option in order to ignore if the old CRC file could not be deleted
+        fs::remove_file(&old_hash_file_path).ok();
 
         // check for deltas
         let mut parent_dir: Option<&Path> = None;
@@ -186,7 +187,7 @@ impl Synchronizer {
             log::info!("removed {old_path:?}");
             if self.ftp_is_dir(old_path) {
                 if let Some(del_dir) = parent_dir {
-                    self.ftp_remove_dir(del_dir)?
+                    self.ftp_remove_dir(del_dir)?;
                 }
                 parent_dir = Some(old_path);
             } else {
@@ -194,7 +195,7 @@ impl Synchronizer {
             }
         }
         if let Some(del_dir) = parent_dir {
-            self.ftp_remove_dir(del_dir)?
+            self.ftp_remove_dir(del_dir)?;
         }
 
         Ok(())
@@ -277,7 +278,7 @@ impl Synchronizer {
 
     fn ftp_push_file(&mut self, file: &Path) -> Result<()> {
         let mut to_dir = self.ftp_create_and_goto_dir(file.parent().unwrap())?;
-        let file_name = file.file_name().and_then(|s| s.to_str()).unwrap();
+        let file_name = file.file_name().and_then(OsStr::to_str).unwrap();
         to_dir.push(file_name);
         self.ftp_stream.put(&to_dir, file)
     }

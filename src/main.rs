@@ -1,3 +1,5 @@
+#![deny(clippy::all, clippy::use_self, clippy::uninlined_format_args)]
+
 mod config;
 mod filter;
 mod ftp;
@@ -18,7 +20,7 @@ use std::path::{Path, PathBuf};
 
 fn sync(path: &Path, conf: &Config, scratch: bool, overwrite: bool) -> Result<()> {
     if scratch {
-        render::build(path, conf, true)?
+        render::build(path, conf, true)?;
     }
     let mut synchronizer = Synchronizer::new(conf)?;
     if overwrite {

@@ -22,11 +22,11 @@ pub struct Ftp {
 
 impl Ftp {
     pub fn new(server: &str, port: u32, user: &str) -> Result<Self> {
-        let connection_str = format!("{}:{}", server, port);
-        let mut ftp = Ftp {
+        let connection_str = format!("{server}:{port}");
+        let mut ftp = Self {
             stream: FtpStream::connect(connection_str.as_str())?,
         };
-        println!("Enter password for ftp server '{}' user '{}'", server, user);
+        println!("Enter password for ftp server '{server}' user '{user}'");
         let passwd = rpassword::prompt_password("Password: ")
             .context("Couldn't read password from standard input")?;
         ftp.stream
@@ -49,11 +49,10 @@ impl FtpOperations for Ftp {
                     .read_to_end(&mut buf)
                     .map(|_| {
                         let mut f = File::create(local_path)
-                            .unwrap_or_else(|_| panic!("Couldn't create file '{:?}'.", local_path));
+                            .unwrap_or_else(|_| panic!("Couldn't create file '{local_path:?}'."));
                         f.write_all(buf.as_slice()).unwrap_or_else(|_| {
                             panic!(
-                                "FTP: file '{}' could not be written to '{:?}'.",
-                                remote_file, local_path
+                                "FTP: file '{remote_file}' could not be written to '{local_path:?}'."
                             )
                         });
                     })
@@ -66,25 +65,25 @@ impl FtpOperations for Ftp {
     fn cwd(&mut self, path: &Path) -> Result<()> {
         self.stream
             .cwd(last_path_comp_as_str!(path)?)
-            .with_context(|| format!("FTP: Couldn't change to dir '{:?}'", path))
+            .with_context(|| format!("FTP: Couldn't change to dir '{path:?}'"))
     }
 
     fn mkdir(&mut self, path: &Path) -> Result<()> {
         self.stream
             .mkdir(last_path_comp_as_str!(path)?)
-            .with_context(|| format!("FTP: Couldn't create dir '{:?}'", path))
+            .with_context(|| format!("FTP: Couldn't create dir '{path:?}'"))
     }
 
     fn rmdir(&mut self, path: &Path) -> Result<()> {
         self.stream
             .rmdir(last_path_comp_as_str!(path)?)
-            .with_context(|| format!("FTP: Couldn't remove dir '{:?}'", path))
+            .with_context(|| format!("FTP: Couldn't remove dir '{path:?}'"))
     }
 
     fn del(&mut self, path: &Path) -> Result<()> {
         self.stream
             .rm(last_path_comp_as_str!(path)?)
-            .with_context(|| format!("FTP: Couldn't remove file '{:?}'", path))
+            .with_context(|| format!("FTP: Couldn't remove file '{path:?}'"))
     }
 
     fn put(&mut self, path: &Path, local_path: &Path) -> Result<()> {
@@ -96,7 +95,7 @@ impl FtpOperations for Ftp {
         self.stream
             .put_file(file_name, &mut f)
             .map(|_| ())
-            .with_context(|| format!("FTP: Couldn't push file '{}' to server", file_name))
+            .with_context(|| format!("FTP: Couldn't push file '{file_name}' to server"))
     }
 
     fn cwdroot(&mut self) -> Result<()> {
@@ -118,7 +117,7 @@ pub struct Sftp {
 
 impl Sftp {
     pub fn new(server: &str, port: u32, user: &str) -> Result<Self> {
-        let connection_str = format!("{}:{}", server, port);
+        let connection_str = format!("{server}:{port}");
         let tcp = TcpStream::connect(connection_str.as_str())?;
         let mut session = ssh2::Session::new()?;
         session.set_tcp_stream(tcp);
@@ -127,7 +126,7 @@ impl Sftp {
             .context("Couldn't read password from standard input")?;
         session.userauth_password(user, passwd.as_str())?;
         if session.authenticated() {
-            Ok(Sftp { session })
+            Ok(Self { session })
         } else {
             Err(anyhow!("SFTP: connection could not be established!"))
         }
@@ -141,12 +140,9 @@ impl FtpOperations for Sftp {
         let mut buf = Vec::new();
         file.read_to_end(&mut buf).map(|_| {
             let mut f = File::create(local_path)
-                .unwrap_or_else(|_| panic!("Couldn't create file '{:?}'.", local_path));
+                .unwrap_or_else(|_| panic!("Couldn't create file '{local_path:?}'."));
             f.write_all(buf.as_slice()).unwrap_or_else(|_| {
-                panic!(
-                    "SFTP: file '{:?}' could not be written to '{:?}'.",
-                    path, local_path
-                )
+                panic!("SFTP: file '{path:?}' could not be written to '{local_path:?}'.")
             });
         })?;
         Ok(())
@@ -157,7 +153,7 @@ impl FtpOperations for Sftp {
         // so we only need to check that the directory exists a cwd operation
         let sftp = self.session.sftp()?;
         sftp.opendir(path)
-            .with_context(|| format!("SFTP: couldn't read '{:?}'", path))
+            .with_context(|| format!("SFTP: couldn't read '{path:?}'"))
             .map(|_| ())
     }
 
@@ -167,19 +163,19 @@ impl FtpOperations for Sftp {
         // https://www.libssh2.org/libssh2_sftp_mkdir_ex.html
         let sftp = self.session.sftp()?;
         sftp.mkdir(path, 0o755)
-            .with_context(|| format!("SFTP: couldn't create '{:?}'", path))
+            .with_context(|| format!("SFTP: couldn't create '{path:?}'"))
     }
 
     fn rmdir(&mut self, path: &Path) -> Result<()> {
         let sftp = self.session.sftp()?;
         sftp.rmdir(path)
-            .with_context(|| format!("SFTP: couldn't remove dir '{:?}'", path))
+            .with_context(|| format!("SFTP: couldn't remove dir '{path:?}'"))
     }
 
     fn del(&mut self, path: &Path) -> Result<()> {
         let sftp = self.session.sftp()?;
         sftp.unlink(path)
-            .with_context(|| format!("SFTP: couldn't remove file '{:?}'", path))
+            .with_context(|| format!("SFTP: couldn't remove file '{path:?}'"))
     }
 
     fn put(&mut self, path: &Path, local_path: &Path) -> Result<()> {
@@ -187,14 +183,11 @@ impl FtpOperations for Sftp {
         let mut f = File::open(local_path)?;
         let mut remote_file = sftp
             .create(path)
-            .with_context(|| format!("SFTP: Couldn't push file '{:?}' to server", path))?;
+            .with_context(|| format!("SFTP: Couldn't push file '{path:?}' to server"))?;
         let mut buf = Vec::new();
         f.read_to_end(&mut buf).map(|_| {
             remote_file.write_all(buf.as_slice()).unwrap_or_else(|_| {
-                panic!(
-                    "SFTP: file '{:?}' could not be written to '{:?}'.",
-                    path, local_path
-                )
+                panic!("SFTP: file '{path:?}' could not be written to '{local_path:?}'.")
             });
         })?;
         Ok(())
