@@ -10,7 +10,6 @@ name = "neptungen"
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
-chrono = { version = "0.4", default-features = false }
 lazy_static = "1"
 liquid = "0.26"
 log = "0.4"
@@ -29,5 +28,6 @@ sha1 = "0.10"
 ssh2 = "0.9"
 suppaftp = "5"
 term-painter = "0.3"
+time = { version = "0.3", features = ["local-offset"] }
 toml = "0.7"
 walkdir = "2"

@@ -38,7 +38,10 @@ impl fmt::Display for MenuCmd {
 pub fn build(path: &Path, conf: &Config, clean: bool) -> Result<()> {
     log::info!(
         "[{}] Building project `{}`",
-        chrono::Local::now(),
+        time::OffsetDateTime::now_local()
+            .unwrap_or_else(|_| time::OffsetDateTime::now_utc())
+            .format(&time::format_description::well_known::Iso8601::DEFAULT)
+            .unwrap_or("??".to_string()),
         conf.title.as_deref().unwrap_or("unknown"),
     );
     let output_dir = PathBuf::from(conf.output_dir.as_ref().unwrap());
