@@ -1,6 +1,6 @@
 [package]
 name = "neptungen"
-version = "0.8.4"
+version = "0.8.5"
 authors = ["Philipp Degler <deglerp@googlemail.com>"]
 edition = "2021"
 
