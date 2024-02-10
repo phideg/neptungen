@@ -54,7 +54,7 @@ pub fn build(path: &Path, conf: &Config, clean: bool) -> Result<()> {
         .min_depth(1)
         .into_iter()
         .filter_entry(is_not_hidden)
-        .filter(|e| e.is_ok() && is_modified_markdown(e.as_ref().unwrap(), &prev_build_timestamp))
+        .filter(|e| e.is_ok() && is_modified_markdown(e.as_ref().unwrap(), prev_build_timestamp))
         .collect();
     entries.par_iter().for_each(|e| {
         let src = e.as_ref().unwrap();
