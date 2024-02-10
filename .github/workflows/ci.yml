@@ -3,7 +3,7 @@ on:
   pull_request:
   push:
     branches:
-    - master
+    - main
 
 jobs:
   test:
@@ -28,7 +28,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Install Rust
       run: |
         rustup update ${{ matrix.rust }} && rustup default ${{ matrix.rust }}
