@@ -14,9 +14,14 @@ Start the ftp server as a docker container. User name is `neptun` and password `
 docker run --rm -d --network=host --name ftp -e USERS="neptun|neptun" delfer/alpine-ftp-server
 ```
 
-> Remark: With this kind of docker execution no data will remain after the container was stopped.
+> ⚠️ **Attention:**  
+> - The ftp server is only intended to run on the localhost. If you leave the `--network=host` option you will not be able to access the ftp server as expected. More info about the docker container and its options can be found [here](https://github.com/delfer/docker-alpine-ftp-server)  
+> - Depending on your user and distro it might be even necessary to run the docker as `root`. So just start it with `sudo ...`
 
-> Hint: Here the ftp server is only intended to run on the localhost. If you leave the `--network=host` option you will not be able to access the ftp server as expected. More info about the docker container and its options can be found [here](https://github.com/delfer/docker-alpine-ftp-server)
+> 💡 **Remark:**  
+> With this kind of docker execution no data will remain after the container was stopped.
+
+
 
 The FTP server can be stopped with the following docker command
 
