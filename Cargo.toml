@@ -1,6 +1,6 @@
 [package]
 name = "neptungen"
-version = "0.8.5"
+version = "0.8.6"
 authors = ["Philipp Degler <deglerp@googlemail.com>"]
 edition = "2021"
 
@@ -14,10 +14,10 @@ lazy_static = "1"
 liquid = "0.26"
 log = "0.4"
 image = "0.24"
-flexi_logger = "0.25"
+flexi_logger = "0.27"
 memmap = "0.7"
 parking_lot = "0.12"
-pulldown-cmark = "0.9"
+pulldown-cmark = "0.10"
 rayon = "1"
 regex = "1"
 rpassword = "7"
@@ -29,5 +29,5 @@ ssh2 = "0.9"
 suppaftp = "5"
 term-painter = "0.3"
 time = { version = "0.3", features = ["local-offset"] }
-toml = "0.7"
+toml = "0.8"
 walkdir = "2"
