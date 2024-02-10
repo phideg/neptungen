@@ -6,7 +6,7 @@
     clippy::nursery,
     clippy::cargo
 )]
-// #![warn(clippy::multiple_crate_versions)]
+#![allow(clippy::multiple_crate_versions)]
 #![allow(clippy::similar_names)]
 
 mod config;
