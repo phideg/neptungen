@@ -41,7 +41,7 @@ pub fn build(path: &Path, conf: &Config, clean: bool) -> Result<()> {
         time::OffsetDateTime::now_local()
             .unwrap_or_else(|_| time::OffsetDateTime::now_utc())
             .format(&time::format_description::well_known::Iso8601::DEFAULT)
-            .unwrap_or("??".to_string()),
+            .unwrap_or_else(|_| "??".to_string()),
         conf.title.as_deref().unwrap_or("unknown"),
     );
     let output_dir = PathBuf::from(conf.output_dir.as_ref().unwrap());
@@ -93,11 +93,9 @@ fn build_page(
     target_dir: &Path,
     conf: &Config,
 ) {
-    let page_name = if let Some(name) = target_dir.file_name() {
-        name.to_str().unwrap_or("None")
-    } else {
-        "None"
-    };
+    let page_name = target_dir
+        .file_name()
+        .map_or("None", |name| name.to_str().unwrap_or("None"));
     let page_content = convert_markdown_to_html(entry.path());
     let html = if entry.file_name() == "gallery.md" {
         let images = prepare_gallery(entry, target_dir, conf);
@@ -146,7 +144,7 @@ fn copy_dirs(path: &Path, target_path: &Path, conf: &Config) {
                 .create(target_file.parent().expect("Missing parent folder!"))
             {
                 println!("{err}");
-                log::error!("{err}")
+                log::error!("{err}");
             }
             if !target_file.exists() || is_file_modified(entry.path(), &target_file) {
                 fs::copy(entry.path(), target_file)
@@ -230,8 +228,8 @@ fn prepare_site_structure(
         let nav_entry = liquid::object!({
             "name": name,
             "url" : url.as_os_str().to_str().unwrap().to_owned(),
-            "menu_cmd" : menu_cmd.to_string().to_owned(),
-            "level_depth" : level_depth as i32,
+            "menu_cmd" : menu_cmd.to_string().clone(),
+            "level_depth" : level_depth,
         });
         nav_entries.push(liquid::model::Value::Object(nav_entry));
         prev_depth = entry.depth();
@@ -241,7 +239,7 @@ fn prepare_site_structure(
             "name": String::new(),
             "url" : String::new(),
             "menu_cmd" : MenuCmd::CloseLevel.to_string(),
-            "level_depth" : (prev_depth - 1) as i32,
+            "level_depth" : prev_depth - 1,
         });
         nav_entries.push(liquid::model::Value::Object(nav_entry));
     }
@@ -422,6 +420,7 @@ fn convert_markdown_to_html(entry: &Path) -> String {
 }
 
 fn write_html_file(html: &str, target_dir: &Path, entry: &DirEntry) {
+    #[allow(clippy::option_if_let_else)]
     let html_file = match entry.file_name().to_str() {
         Some(fname) => {
             let mut tmp_path = PathBuf::from(fname);

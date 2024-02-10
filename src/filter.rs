@@ -1,12 +1,12 @@
-use std::time::SystemTime;
+use std::{path::Path, time::SystemTime};
 use walkdir::{DirEntry, WalkDir};
 
 pub fn is_markdown(entry: &DirEntry) -> bool {
-    entry
-        .file_name()
-        .to_str()
-        .map(|s| s.ends_with(".md"))
-        .unwrap_or(false)
+    entry.file_name().to_str().is_some_and(|s| {
+        Path::new(s)
+            .extension()
+            .map_or(false, |ext| ext.eq_ignore_ascii_case("md"))
+    })
 }
 
 pub fn is_modified_markdown(entry: &DirEntry, last_build: &SystemTime) -> bool {
@@ -25,8 +25,7 @@ pub fn is_not_hidden(entry: &DirEntry) -> bool {
     entry
         .file_name()
         .to_str()
-        .map(|s| !s.starts_with('.') && !s.starts_with('_'))
-        .unwrap_or(false)
+        .is_some_and(|s| !s.starts_with('.') && !s.starts_with('_'))
 }
 
 pub fn is_directory(entry: &DirEntry) -> bool {
@@ -34,18 +33,13 @@ pub fn is_directory(entry: &DirEntry) -> bool {
 }
 
 pub fn is_image(entry: &DirEntry) -> bool {
-    entry
-        .file_name()
-        .to_str()
-        .map(|f| {
-            f.ends_with(".jpg")
-                || f.ends_with(".JPG")
-                || f.ends_with(".png")
-                || f.ends_with(".PNG")
-                || f.ends_with(".gif")
-                || f.ends_with(".GIF")
+    entry.file_name().to_str().is_some_and(|s| {
+        Path::new(s).extension().map_or(false, |ext| {
+            ext.eq_ignore_ascii_case("jpg")
+                || ext.eq_ignore_ascii_case("png")
+                || ext.eq_ignore_ascii_case("gif")
         })
-        .unwrap_or(false)
+    })
 }
 
 pub fn contains_markdown_file(entry: &DirEntry) -> bool {

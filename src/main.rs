@@ -1,10 +1,20 @@
-#![deny(clippy::all, clippy::use_self, clippy::uninlined_format_args)]
+#![deny(
+    clippy::all,
+    clippy::use_self,
+    clippy::uninlined_format_args,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::cargo
+)]
+#![warn(clippy::multiple_crate_versions)]
+#![allow(clippy::similar_names)]
 
 mod config;
 mod filter;
 mod ftp;
 mod macros;
 mod render;
+mod server;
 mod sha1dir;
 mod sync;
 mod template;
@@ -55,6 +65,8 @@ enum Command {
     Build(Build),
     /// Synchronize the website with an sftp or ftp server
     Sync(Sync),
+    /// Start a local http server that allows testing the site
+    Serve,
 }
 
 #[derive(Parser)]
@@ -73,10 +85,9 @@ fn main() -> Result<()> {
     let arguments = Arguments::parse();
 
     let path = if let Some(path) = arguments.project_path {
-        fs::canonicalize(path).expect("could not determine path")
+        fs::canonicalize(path)?
     } else {
-        std::env::current_dir()
-            .unwrap_or_else(|_| fs::canonicalize(".").expect("could not determine path"))
+        std::env::current_dir()?
     };
 
     // load configuration from config.toml if present
@@ -107,6 +118,7 @@ fn main() -> Result<()> {
             sync_args.scratch,
             sync_args.overwrite,
         )?,
+        Command::Serve => server::serve(&conf),
     };
 
     Ok(())

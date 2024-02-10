@@ -6,7 +6,7 @@ use std::net::TcpStream;
 use std::path::{Component, Path};
 use suppaftp::{types::FileType, types::FtpError, FtpStream};
 
-pub trait FtpOperations {
+pub trait Operations {
     fn get(&mut self, path: &Path, local_path: &Path) -> Result<()>;
     fn put(&mut self, path: &Path, local_path: &Path) -> Result<()>;
     fn del(&mut self, path: &Path) -> Result<()>;
@@ -39,7 +39,7 @@ impl Ftp {
     }
 }
 
-impl FtpOperations for Ftp {
+impl Operations for Ftp {
     fn get(&mut self, path: &Path, local_path: &Path) -> Result<()> {
         if let Some(Component::Normal(remote_file)) = path.components().last() {
             let remote_file = remote_file.to_str().context("Invalid path component")?;
@@ -133,7 +133,7 @@ impl Sftp {
     }
 }
 
-impl FtpOperations for Sftp {
+impl Operations for Sftp {
     fn get(&mut self, path: &Path, local_path: &Path) -> Result<()> {
         let sftp = self.session.sftp()?;
         let mut file = sftp.open(path)?;

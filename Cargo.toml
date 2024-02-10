@@ -1,6 +1,12 @@
 [package]
 name = "neptungen"
-version = "0.8.6"
+version = "0.9.0"
+description = "Yet another static Website Generator"
+repository = "https://github.com/phideg/neptungen"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+keywords = ["static", "site", "generator", "liquid", "ftp"]
+categories = ["development-tools::testing", "web-programming::http-server", "command-line-utilities"]
 authors = ["Philipp Degler <deglerp@googlemail.com>"]
 edition = "2021"
 
@@ -9,6 +15,7 @@ name = "neptungen"
 
 [dependencies]
 anyhow = "1"
+axum = "0.7"
 clap = { version = "4", features = ["derive"] }
 lazy_static = "1"
 liquid = "0.26"
@@ -16,7 +23,7 @@ log = "0.4"
 image = "0.24"
 flexi_logger = "0.27"
 memmap = "0.7"
-parking_lot = "0.12"
+portpicker = "0.1"
 pulldown-cmark = "0.10"
 rayon = "1"
 regex = "1"
@@ -28,6 +35,9 @@ sha1 = "0.10"
 ssh2 = "0.9"
 suppaftp = "5"
 term-painter = "0.3"
+tokio = { version = "1.36", features = ["macros", "rt", "rt-multi-thread"] }
 time = { version = "0.3", features = ["local-offset"] }
 toml = "0.8"
+tower = "0.4"
+tower-http = { version = "0.5.1", features = ["fs", "trace"] }
 walkdir = "2"

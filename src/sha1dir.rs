@@ -1,7 +1,6 @@
 use anyhow::Result;
 use lazy_static::lazy_static;
 use memmap::Mmap;
-use parking_lot::Mutex;
 use rayon::{Scope, ThreadPoolBuilder};
 use sha1::{Digest, Sha1};
 use std::cmp;
@@ -10,12 +9,13 @@ use std::env;
 use std::fmt::{self, Display};
 use std::fs::{File, Metadata};
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 lazy_static! {
     static ref START_DIR: PathBuf = PathBuf::from(".");
 }
 
-pub(crate) fn create_hashes(dir: &Path) -> Result<BTreeMap<PathBuf, [u8; 20]>> {
+pub fn create_hashes(dir: &Path) -> Result<BTreeMap<PathBuf, [u8; 20]>> {
     debug_assert!(dir.is_absolute());
     ThreadPoolBuilder::new()
         .num_threads(cmp::min(std::thread::available_parallelism()?.get(), 8))
@@ -47,7 +47,7 @@ struct ChecksumsBuilder {
 
 impl Display for ChecksumsBuilder {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let data = self.data.lock();
+        let data = self.data.lock().unwrap();
         for entry in &data.bytes_map {
             write!(f, "{:?} ", entry.0)?;
             for &byte in entry.1 {
@@ -57,7 +57,7 @@ impl Display for ChecksumsBuilder {
         }
         if !data.errors.is_empty() {
             writeln!(f, "Following errors occurred: ").unwrap();
-            for err in data.errors.iter() {
+            for err in &data.errors {
                 writeln!(f, "{err:#?}").unwrap();
             }
         }
@@ -77,7 +77,7 @@ impl ChecksumsBuilder {
         }
         let path = path.to_owned();
         {
-            let mut data = self.data.lock();
+            let mut data = self.data.lock().unwrap();
             data.bytes_map
                 .entry(path.clone())
                 .and_modify(|lhs| {
@@ -92,11 +92,11 @@ impl ChecksumsBuilder {
         }
     }
     fn report_error(&self, error: String) {
-        let mut data = self.data.lock();
+        let mut data = self.data.lock().unwrap();
         data.errors.push(error);
     }
     fn into(self) -> Checksums {
-        self.data.into_inner()
+        self.data.into_inner().unwrap()
     }
 }
 
@@ -108,24 +108,22 @@ fn build_checksums(start_path: &Path) -> Result<Checksums> {
 }
 
 fn entry<'scope>(scope: &Scope<'scope>, checksums: &'scope ChecksumsBuilder, path: &Path) {
-    let result = if let Ok(metadata) = path.symlink_metadata() {
-        let file_type = metadata.file_type();
-        if file_type.is_file() {
-            file(checksums, path, &metadata)
-        } else if file_type.is_symlink() {
-            symlink(checksums, path)
-        } else if file_type.is_dir() {
-            dir(scope, checksums, path)
-        } else {
-            Err(anyhow::anyhow!("File type of {:#?} not supported", path))
-        }
-    } else {
-        Err(anyhow::anyhow!(
-            "Could not read file metadata of {:#?}",
-            path
-        ))
+    let Ok(metadata) = path.symlink_metadata() else {
+        checksums.report_error(format!(
+            "sha1sum: Could not read file metadata of {path:#?}"
+        ));
+        return;
     };
-
+    let file_type = metadata.file_type();
+    let result = if file_type.is_file() {
+        file(checksums, path, &metadata)
+    } else if file_type.is_symlink() {
+        symlink(checksums, path)
+    } else if file_type.is_dir() {
+        dir(scope, checksums, path)
+    } else {
+        Err(anyhow::anyhow!("File type of {:#?} not supported", path))
+    };
     if let Err(error) = result {
         checksums.report_error(format!("sha1sum: {path:#?}: {error}"));
     }
@@ -173,6 +171,7 @@ fn begin(path: &Path, kind: u8) -> Sha1 {
     let mut sha = Sha1::new();
     let path_bytes = path.to_string_lossy();
     sha.update([kind]);
+    #[allow(clippy::cast_possible_truncation)]
     sha.update((path_bytes.len() as u32).to_le_bytes());
     sha.update(path_bytes.as_bytes());
     sha

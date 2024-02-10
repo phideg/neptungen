@@ -38,6 +38,7 @@ pub enum LogKind {
     File,
 }
 
+#[allow(clippy::struct_field_names)]
 #[derive(Debug, Deserialize)]
 pub struct SyncSettings {
     pub ftp_server: String,
@@ -76,7 +77,7 @@ impl Config {
                 img_height: 800,
                 thumb_width: 90,
                 thumb_height: 90,
-            })
+            });
         } else if self.gallery.as_ref().unwrap().img_dir.is_none() {
             self.gallery.as_mut().unwrap().img_dir = Some(GALLERY_FOLDER_NAME.to_string());
         }

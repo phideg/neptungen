@@ -1,5 +1,5 @@
 use crate::config::{Config, FtpProtocol};
-use crate::ftp::{Ftp, FtpOperations, Sftp};
+use crate::ftp::{Ftp, Operations, Sftp};
 use crate::{comp_as_str, sha1dir};
 use crate::{filter, last_path_comp_as_str};
 
@@ -19,7 +19,7 @@ pub struct Synchronizer {
     ftp_target_dir: PathBuf,
     output_path: PathBuf,
     output_path_offset: usize,
-    ftp_stream: Box<dyn FtpOperations>,
+    ftp_stream: Box<dyn Operations>,
 }
 
 impl Synchronizer {
@@ -39,7 +39,7 @@ impl Synchronizer {
         let port = sync_settings
             .ftp_port
             .unwrap_or(if protocol == FtpProtocol::Ftp { 21 } else { 22 });
-        let ftp_stream: Box<dyn FtpOperations> = if protocol == FtpProtocol::Ftp {
+        let ftp_stream: Box<dyn Operations> = if protocol == FtpProtocol::Ftp {
             Box::new(Ftp::new(&server, port, user)?)
         } else {
             Box::new(Sftp::new(&server, port, user)?)
@@ -118,7 +118,7 @@ impl Synchronizer {
         // check for deltas
         let mut parent_dir: Option<&Path> = None;
         let mut new_dir_found = false;
-        for (new_path, new_hash) in checksums.iter() {
+        for (new_path, new_hash) in checksums {
             // copy new directory
             if new_dir_found && new_path.starts_with(parent_dir.unwrap()) {
                 log::info!("Created: {new_path:?}");
@@ -128,9 +128,8 @@ impl Synchronizer {
                     self.ftp_push_file(new_path)?;
                 }
                 continue;
-            } else {
-                new_dir_found = false;
             }
+            new_dir_found = false;
 
             // skip unchanged entries
             if let Some(d) = parent_dir {
@@ -138,9 +137,8 @@ impl Synchronizer {
                     log::info!("Unchanged: {new_path:?}");
                     old_checksums.remove(new_path);
                     continue;
-                } else {
-                    parent_dir = None;
                 }
+                parent_dir = None;
             }
 
             if let Some(old_hash) = old_checksums.remove(new_path) {
