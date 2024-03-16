@@ -1,6 +1,6 @@
 [package]
 name = "neptungen"
-version = "0.9.0"
+version = "0.9.1"
 description = "Yet another static Website Generator"
 repository = "https://github.com/phideg/neptungen"
 readme = "README.md"
@@ -24,8 +24,8 @@ clap = { version = "4", features = ["derive"] }
 lazy_static = "1"
 liquid = "0.26"
 log = "0.4"
-image = "0.24"
-flexi_logger = "0.27"
+image = "0.25"
+flexi_logger = "0.28"
 memmap = "0.7"
 portpicker = "0.1"
 pulldown-cmark = "0.10"
