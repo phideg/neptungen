@@ -10,13 +10,10 @@ use pulldown_cmark::{html, Options, Parser};
 use rayon::prelude::*;
 use regex::Regex;
 use std::fmt::{self, Debug};
-use std::fs;
-use std::fs::DirBuilder;
-use std::fs::File;
+use std::fs::{self, DirBuilder, File};
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
-use std::vec::Vec;
 use walkdir::{DirEntry, WalkDir};
 
 static BUILD_TIMESTAMP_FILE: &str = "last_build.json";

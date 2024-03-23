@@ -128,6 +128,6 @@ mod test {
     #[test]
     fn verify_app() {
         use clap::CommandFactory;
-        super::Arguments::command().debug_assert()
+        super::Arguments::command().debug_assert();
     }
 }
