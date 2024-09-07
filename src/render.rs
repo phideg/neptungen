@@ -42,7 +42,7 @@ pub fn build(path: &Path, conf: &Config, clean: bool) -> Result<()> {
         conf.title.as_deref().unwrap_or("unknown"),
     );
     let output_dir = PathBuf::from(conf.output_dir.as_ref().unwrap());
-    if clean {
+    if clean && output_dir.exists() {
         fs::remove_dir_all(&output_dir)?;
     }
     let nav_items = prepare_site_structure(path, output_dir.as_path(), conf);

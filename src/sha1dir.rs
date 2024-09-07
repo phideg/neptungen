@@ -33,7 +33,7 @@ pub struct Checksums {
 }
 
 impl Checksums {
-    fn new() -> Self {
+    const fn new() -> Self {
         Self {
             bytes_map: BTreeMap::new(),
             errors: Vec::new(),
@@ -66,7 +66,7 @@ impl Display for ChecksumsBuilder {
 }
 
 impl ChecksumsBuilder {
-    fn new() -> Self {
+    const fn new() -> Self {
         Self {
             data: Mutex::new(Checksums::new()),
         }
