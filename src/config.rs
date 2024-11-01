@@ -139,7 +139,7 @@ impl Config {
             "Output directory : {}",
             self.output_dir
                 .as_ref()
-                .unwrap_or(&OUTPUT_FOLDER_NAME.to_string(),)
+                .map_or(OUTPUT_FOLDER_NAME, String::as_str)
         );
         println!("{}", Bold.paint("SyncSettings"));
         if self.sync_settings.is_some() {
@@ -157,7 +157,10 @@ impl Config {
             println!("{}", Bold.paint("Gallery"));
             println!(
                 "  image directory: {}",
-                gallery.img_dir.as_ref().unwrap_or(&"images".to_string())
+                gallery
+                    .img_dir
+                    .as_ref()
+                    .map_or(GALLERY_FOLDER_NAME, String::as_str)
             );
             println!(
                 "  image size : {} x {}",
