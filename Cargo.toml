@@ -1,6 +1,6 @@
 [package]
 name = "neptungen"
-version = "0.9.9"
+version = "0.9.10"
 description = "Yet another static Website Generator"
 repository = "https://github.com/phideg/neptungen"
 readme = "README.md"
@@ -29,7 +29,7 @@ name = "neptungen"
 
 [dependencies]
 anyhow = "1"
-axum = "0.7"
+axum = "0.8"
 clap = { version = "4", features = ["derive"] }
 lazy_static = "1"
 liquid = "0.26"
@@ -49,7 +49,7 @@ sha1 = "0.10"
 ssh2 = "0.9"
 suppaftp = "6"
 term-painter = "0.4"
-tokio = { version = "1.42", features = ["macros", "rt", "rt-multi-thread"] }
+tokio = { version = "1.43", features = ["macros", "rt", "rt-multi-thread"] }
 time = { version = "0.3", features = ["local-offset"] }
 toml = "0.8"
 tower = "0.5"
