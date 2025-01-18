@@ -10,8 +10,6 @@ Have you ever designed a static website for your club or for one of your relativ
 
 The goal of neptungen is to be easy to use and minutes to set up even if you aren't an experienced web developer.
 
-But probably the real reason for neptungen was the desire to learn programming in Rust. So over time the code will hopefully get more idiomatic.
-
 # How does it work
 
 It turns a directory tree containing one markdown file per directory into a static website. The look and feel of the generated website is controlled via [liquid](https://shopify.github.io/liquid/) templates.
