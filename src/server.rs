@@ -6,8 +6,7 @@ use crate::config::Config;
 
 fn create_route(conf: &Config) -> Router {
     // serve generated content
-    Router::new().nest_service(
-        "/",
+    Router::new().fallback_service(
         ServeDir::new(
             conf.output_dir
                 .as_ref()
