@@ -27,7 +27,7 @@ It turns a directory tree containing one markdown file per directory into a stat
 
 You can download one of the [releases](https://github.com/phideg/neptungen/releases) or build the neptungen executable yourself.
 
-__how to build neptungen__
+__how to build neptungen__  
 Install stable rust from [here](https://www.rust-lang.org/en-US/install.html) and clone this repo. Finally you can use cargo to build the executable.
 
 ```bash
