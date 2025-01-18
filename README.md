@@ -27,12 +27,13 @@ It turns a directory tree containing one markdown file per directory into a stat
 
 You can download one of the [releases](https://github.com/phideg/neptungen/releases) or build the neptungen executable yourself.
 
-__how to build neptungen__  
-Install stable rust from [here](https://www.rust-lang.org/en-US/install.html) and clone this repo. Finally you can use cargo to build the executable.
+__how to build and install neptungen__  
+Install stable rust from [here](https://www.rust-lang.org/en-US/install.html) and clone this repo. 
+Now you can use cargo to build and install the executable.
 
 ```bash
 cd neptungen
-cargo build --release
+cargo install --path .
 ```
 
 # Who uses neptungen
@@ -71,7 +72,7 @@ The final step is to generate the site. Therefore `cd` into the root directory a
 
 ```bash
 cd ../../my_new_website
-/path/to/your/neptungen_executable/neptungen build
+neptungen build
 ```
 
 By default the generated output can be found in the `_output` directory.
