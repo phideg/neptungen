@@ -6,13 +6,11 @@ use crate::config::Config;
 
 fn create_route(conf: &Config) -> Router {
     // serve generated content
-    Router::new().fallback_service(
-        ServeDir::new(
-            conf.output_dir
-                .as_ref()
-                .expect("Internal error [create_route(..)]: no output path!"),
-        ),
-    )
+    Router::new().fallback_service(ServeDir::new(
+        conf.output_dir
+            .as_ref()
+            .expect("Internal error [create_route(..)]: no output path!"),
+    ))
 }
 
 #[tokio::main]
