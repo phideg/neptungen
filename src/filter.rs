@@ -5,7 +5,7 @@ pub fn is_markdown(entry: &DirEntry) -> bool {
     entry.file_name().to_str().is_some_and(|s| {
         Path::new(s)
             .extension()
-            .map_or(false, |ext| ext.eq_ignore_ascii_case("md"))
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("md"))
     })
 }
 
@@ -34,7 +34,7 @@ pub fn is_directory(entry: &DirEntry) -> bool {
 
 pub fn is_image(entry: &DirEntry) -> bool {
     entry.file_name().to_str().is_some_and(|s| {
-        Path::new(s).extension().map_or(false, |ext| {
+        Path::new(s).extension().is_some_and(|ext| {
             ext.eq_ignore_ascii_case("jpg")
                 || ext.eq_ignore_ascii_case("png")
                 || ext.eq_ignore_ascii_case("gif")
