@@ -1,10 +1,10 @@
 use crate::last_path_comp_as_str;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::path::{Component, Path};
-use suppaftp::{types::FileType, types::FtpError, FtpStream};
+use suppaftp::{FtpStream, types::FileType, types::FtpError};
 
 pub trait Operations {
     fn get(&mut self, path: &Path, local_path: &Path) -> Result<()>;

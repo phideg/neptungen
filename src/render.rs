@@ -6,7 +6,7 @@ use crate::filter::{
 use crate::template;
 use anyhow::Result;
 use lazy_static::lazy_static;
-use pulldown_cmark::{html, Options, Parser};
+use pulldown_cmark::{Options, Parser, html};
 use rayon::prelude::*;
 use regex::Regex;
 use std::fmt::{self, Debug};
@@ -80,7 +80,8 @@ fn get_and_set_build_timestamp(outdir: &Path) -> SystemTime {
     }
     let f = std::fs::File::create(&build_timestamp_file)
         .expect("Unable to create {build_timestamp_file:?}");
-    serde_json::to_writer(f, &now).expect("Unable to write data to {build_timestamp_file:?}");
+    serde_json::to_writer(f, &now)
+        .unwrap_or_else(|_| panic!("Unable to write data to {build_timestamp_file:?}"));
     last_build
 }
 
@@ -112,16 +113,15 @@ fn build_page(
 }
 
 fn is_file_modified(src: &Path, trg: &Path) -> bool {
-    if let Ok(src_meta) = src.metadata() {
-        if let Ok(trg_meta) = trg.metadata() {
-            if let Ok(src_tstmp) = src_meta.modified() {
-                if let Ok(trg_tstmp) = trg_meta.modified() {
-                    return src_tstmp != trg_tstmp;
-                }
-            }
-        }
-    }
-    true
+    src.metadata().is_ok_and(|src_meta| {
+        trg.metadata().is_ok_and(|trg_meta| {
+            src_meta.modified().is_ok_and(|src_tstmp| {
+                trg_meta
+                    .modified()
+                    .is_ok_and(|trg_tstmp| src_tstmp != trg_tstmp)
+            })
+        })
+    })
 }
 
 fn copy_dirs(path: &Path, target_path: &Path, conf: &Config) {
@@ -407,7 +407,7 @@ fn convert_markdown_to_html(entry: &Path) -> String {
     let mut markdown = String::new();
     let mut html_output = String::new();
     match File::open(entry).and_then(|mut f| f.read_to_string(&mut markdown)) {
-        Err(error) => panic!("failed to open {}: {}", entry.display(), error),
+        Err(error) => panic!("failed to open {}: {error}", entry.display()),
         Ok(_) => html::push_html(
             &mut html_output,
             Parser::new_ext(markdown.as_str(), Options::empty()),

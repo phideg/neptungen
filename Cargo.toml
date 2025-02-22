@@ -1,6 +1,6 @@
 [package]
 name = "neptungen"
-version = "0.10.0"
+version = "0.10.1"
 description = "Yet another static Website Generator"
 repository = "https://github.com/phideg/neptungen"
 readme = "README.md"
@@ -12,7 +12,7 @@ categories = [
     "command-line-utilities",
 ]
 authors = ["Philipp Degler <deglerp@googlemail.com>"]
-edition = "2021"
+edition = "2024"
 
 [profile.release]
 opt-level = 3
@@ -38,7 +38,7 @@ image = "0.25"
 flexi_logger = "0.29"
 memmap = "0.7"
 portpicker = "0.1"
-pulldown-cmark = "0.12"
+pulldown-cmark = "0.13"
 rayon = "1"
 regex = "1"
 rpassword = "7"

@@ -3,7 +3,7 @@ use crate::ftp::{Ftp, Operations, Sftp};
 use crate::{comp_as_str, sha1dir};
 use crate::{filter, last_path_comp_as_str};
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::fs;
