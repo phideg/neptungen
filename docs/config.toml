@@ -1,0 +1,11 @@
+title = "Neptungen documentation"
+template_dir = ".templates"
+output_dir = "PUBLIC"
+copy_dirs = ["_scripts", "_css", "_fontawesome", "_fonts"]
+logging = "Stdout"
+
+[gallery]
+img_width = 600
+img_height = 500
+thumb_width = 90
+thumb_height = 90

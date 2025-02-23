@@ -5,3 +5,5 @@ target
 *rs.bk
 examples/simple_blog/PUBLIC
 examples/simple_blog/.logs
+docs/PUBLIC
+docs/.logs
