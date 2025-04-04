@@ -92,7 +92,7 @@
                         {% if item.url.size > 0 %}
                         <a href="{{ root_dir }}{{ item.url }}">{{ item.name }}</a>
                         {% else %}
-                        <a href="#"><bold>{{ item.name }}</bold></a>
+                        <a href="#"><strong>{{ item.name }}</strong></a>
                         {% endif %}
                     </li>
                     <li>
@@ -104,7 +104,7 @@
                         {% if item.url.size > 0 %}
                         <a href="{{ root_dir }}{{ item.url }}">{{ item.name }}</a>
                         {% else %}
-                        <a href="#"><bold>{{ item.name }}</bold></a>
+                        <a href="#"><strong>{{ item.name }}</strong></a>
                         {% endif %}
                     </li>
                     <li>
