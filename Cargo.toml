@@ -31,7 +31,6 @@ name = "neptungen"
 anyhow = "1"
 axum = "0.8"
 clap = { version = "4", features = ["derive"] }
-lazy_static = "1"
 liquid = "0.26"
 log = "0.4"
 image = "0.25"

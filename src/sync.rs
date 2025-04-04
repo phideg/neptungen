@@ -148,8 +148,6 @@ impl Synchronizer {
                     log::info!("Unchanged: {new_path:?}");
                     if new_path.is_dir() {
                         parent_dir = Some(new_path);
-                    } else {
-                        continue;
                     }
                 } else {
                     log::info!("Updated: {new_path:?}");

@@ -41,7 +41,7 @@ impl Ftp {
 
 impl Operations for Ftp {
     fn get(&mut self, path: &Path, local_path: &Path) -> Result<()> {
-        if let Some(Component::Normal(remote_file)) = path.components().last() {
+        if let Some(Component::Normal(remote_file)) = path.components().next_back() {
             let remote_file = remote_file.to_str().context("Invalid path component")?;
             self.stream.retr(remote_file, |stream| {
                 let mut buf = Vec::new();

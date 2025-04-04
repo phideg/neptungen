@@ -1,5 +1,4 @@
 use anyhow::Result;
-use lazy_static::lazy_static;
 use memmap::Mmap;
 use rayon::{Scope, ThreadPoolBuilder};
 use sha1::{Digest, Sha1};
@@ -11,9 +10,7 @@ use std::fs::{File, Metadata};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-lazy_static! {
-    static ref START_DIR: PathBuf = PathBuf::from(".");
-}
+static START_DIR: std::sync::LazyLock<PathBuf> = std::sync::LazyLock::new(|| PathBuf::from("."));
 
 pub fn create_hashes(dir: &Path) -> Result<BTreeMap<PathBuf, [u8; 20]>> {
     debug_assert!(dir.is_absolute());

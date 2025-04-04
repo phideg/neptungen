@@ -5,7 +5,6 @@ use crate::filter::{
 };
 use crate::template;
 use anyhow::Result;
-use lazy_static::lazy_static;
 use pulldown_cmark::{Options, Parser, html};
 use rayon::prelude::*;
 use regex::Regex;
@@ -171,9 +170,8 @@ fn copy_images(source: &Path, target: &Path) {
 }
 
 fn remove_number_prefix<'a>(name: &'a str, conf: &Config) -> &'a str {
-    lazy_static! {
-        static ref NUM_PREFIX: Regex = Regex::new("^[0-9]+_.+$").unwrap();
-    }
+    static NUM_PREFIX: std::sync::LazyLock<Regex> =
+        std::sync::LazyLock::new(|| Regex::new("^[0-9]+_.+$").unwrap());
     if (conf.remove_numbered_prefix.is_none() || conf.remove_numbered_prefix.unwrap_or(true))
         && NUM_PREFIX.is_match(name)
     {

@@ -119,7 +119,7 @@ fn main() -> Result<()> {
             sync_args.overwrite,
         )?,
         Command::Serve => server::serve(&conf),
-    };
+    }
 
     Ok(())
 }
