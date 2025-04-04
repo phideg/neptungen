@@ -48,13 +48,16 @@ pub fn contains_markdown_file(entry: &DirEntry) -> bool {
         .any(|e| e.is_ok() && is_markdown(e.as_ref().unwrap()))
 }
 
+pub fn contains_markdown_in_dir(entry: &DirEntry) -> bool {
+    WalkDir::new(entry.path())
+        .max_depth(1)
+        .into_iter()
+        .any(|e| e.is_ok_and(|e| is_markdown(&e)))
+}
+
 pub fn contains_markdown_subdir(entry: &DirEntry) -> bool {
     WalkDir::new(entry.path())
         .min_depth(1)
         .into_iter()
-        .any(|e| {
-            e.is_ok()
-                && is_directory(e.as_ref().unwrap())
-                && contains_markdown_file(e.as_ref().unwrap())
-        })
+        .any(|e| e.is_ok_and(|e| is_directory(&e) && contains_markdown_file(&e)))
 }

@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::filter::{
-    contains_markdown_file, contains_markdown_subdir, is_directory, is_image, is_modified_markdown,
-    is_not_hidden,
+    contains_markdown_file, contains_markdown_in_dir, contains_markdown_subdir, is_directory,
+    is_image, is_modified_markdown, is_not_hidden,
 };
 use crate::template;
 use anyhow::Result;
@@ -224,7 +224,7 @@ fn prepare_site_structure(
             };
         let nav_entry = liquid::object!({
             "name": name,
-            "url" : url.as_os_str().to_str().unwrap().to_owned(),
+            "url" : if contains_markdown_in_dir(&entry) { url.as_os_str().to_str().unwrap().to_owned() } else { String::new() },
             "menu_cmd" : menu_cmd.to_string().clone(),
             "level_depth" : level_depth,
         });
