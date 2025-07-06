@@ -11,13 +11,12 @@ pub fn is_markdown(entry: &DirEntry) -> bool {
 
 pub fn is_modified_markdown(entry: &DirEntry, last_build: SystemTime) -> bool {
     let is_markdown = is_markdown(entry);
-    if is_markdown {
-        if let Ok(metadata) = entry.metadata() {
-            if let Ok(modified) = metadata.modified() {
-                return modified > last_build;
-            }
+    if is_markdown
+        && let Ok(metadata) = entry.metadata()
+            && let Ok(modified) = metadata.modified()
+        {
+            return modified > last_build;
         }
-    }
     is_markdown
 }
 

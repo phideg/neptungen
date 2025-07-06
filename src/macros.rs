@@ -24,7 +24,7 @@ mod tests {
     #[test]
     fn test_comp_as_str() {
         let p = std::path::Path::new("/a");
-        assert_eq!(comp_as_str!(p.components().last().unwrap()).unwrap(), "a");
+        assert_eq!(comp_as_str!(p.components().next_back().unwrap()).unwrap(), "a");
     }
 
     #[test]

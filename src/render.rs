@@ -68,14 +68,14 @@ fn get_and_set_build_timestamp(outdir: &Path) -> SystemTime {
     let now = SystemTime::now();
     let build_timestamp_file = outdir.join(BUILD_TIMESTAMP_FILE);
     let mut last_build = SystemTime::UNIX_EPOCH;
-    if let Ok(f) = std::fs::File::open(&build_timestamp_file) {
-        if let Ok(build_tstmp) = serde_json::from_reader(f) {
-            log::info!(
-                "Duration since last build {:#?}",
-                now.duration_since(build_tstmp).unwrap_or_default()
-            );
-            last_build = build_tstmp;
-        }
+    if let Ok(f) = std::fs::File::open(&build_timestamp_file)
+        && let Ok(build_tstmp) = serde_json::from_reader(f)
+    {
+        log::info!(
+            "Duration since last build {:#?}",
+            now.duration_since(build_tstmp).unwrap_or_default()
+        );
+        last_build = build_tstmp;
     }
     let f = std::fs::File::create(&build_timestamp_file)
         .expect("Unable to create {build_timestamp_file:?}");

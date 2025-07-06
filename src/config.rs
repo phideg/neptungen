@@ -116,15 +116,14 @@ impl Config {
             }
             self.copy_dirs = Some(new_copy_dirs);
         }
-        if let Some(ref mut sync_settings) = self.sync_settings {
-            if let Some(ref mut ftp_target_dir) = sync_settings.ftp_target_dir {
-                if !ftp_target_dir.starts_with('/') {
-                    println!(
-                        "ftp_target_dir contains no absolute path '/' will be prepended to '{ftp_target_dir}'"
-                    );
-                    ftp_target_dir.insert(0, '/');
-                }
-            }
+        if let Some(ref mut sync_settings) = self.sync_settings
+            && let Some(ref mut ftp_target_dir) = sync_settings.ftp_target_dir
+            && !ftp_target_dir.starts_with('/')
+        {
+            println!(
+                "ftp_target_dir contains no absolute path '/' will be prepended to '{ftp_target_dir}'"
+            );
+            ftp_target_dir.insert(0, '/');
         }
     }
 

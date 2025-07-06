@@ -45,6 +45,8 @@ cd neptungen
 cargo install --path .
 ```
 
+Minimum required stable Rust version is 1.88
+
 # Who uses neptungen
 
 - [TSC Neptun Bruehl](http://tsc-neptun-bruehl.de)

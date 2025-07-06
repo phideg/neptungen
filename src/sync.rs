@@ -121,7 +121,7 @@ impl Synchronizer {
         for (new_path, new_hash) in checksums {
             // copy new directory
             if new_dir_found && new_path.starts_with(parent_dir.unwrap()) {
-                log::info!("Created: {new_path:?}");
+                log::info!("Created: {}", new_path.display());
                 if new_path.is_dir() {
                     self.ftp_create_and_goto_dir(new_path)?;
                 } else {
@@ -134,7 +134,7 @@ impl Synchronizer {
             // skip unchanged entries
             if let Some(d) = parent_dir {
                 if new_path.starts_with(d) {
-                    log::info!("Unchanged: {new_path:?}");
+                    log::info!("Unchanged: {}", new_path.display());
                     old_checksums.remove(new_path);
                     continue;
                 }
@@ -145,12 +145,12 @@ impl Synchronizer {
                 // entry exists on remote check wether update is necessary
                 let hash_is_equal = &old_hash == new_hash;
                 if hash_is_equal {
-                    log::info!("Unchanged: {new_path:?}");
+                    log::info!("Unchanged: {}", new_path.display());
                     if new_path.is_dir() {
                         parent_dir = Some(new_path);
                     }
                 } else {
-                    log::info!("Updated: {new_path:?}");
+                    log::info!("Updated: {}", new_path.display());
                     if new_path.is_dir() {
                         self.ftp_create_and_goto_dir(new_path)?;
                     } else {
@@ -161,12 +161,12 @@ impl Synchronizer {
                 // entry should not exist on remote but maybe the path still exists
                 // therefore delete file or directory to be sure!
                 if self.ftp_remove_file(new_path).is_ok() {
-                    log::error!("Removed?: {new_path:?} - maybe changed file into dir?");
+                    log::error!("Removed?: {} - maybe changed file into dir?", new_path.display());
                 } else if self.ftp_remove_dir(new_path).is_ok() {
-                    log::error!("Removed?: {new_path:?} - maybe changed dir to filename?");
+                    log::error!("Removed?: {} - maybe changed dir to filename?", new_path.display());
                 }
                 // now we can safely update the remote
-                log::info!("Created: {new_path:?}");
+                log::info!("Created: {}", new_path.display());
                 if new_path.is_dir() {
                     self.ftp_create_and_goto_dir(new_path)?;
                     parent_dir = Some(new_path);
@@ -180,7 +180,7 @@ impl Synchronizer {
         // finally delete removed entries from remote
         parent_dir = None;
         for old_path in old_checksums.keys() {
-            log::info!("removed {old_path:?}");
+            log::info!("removed {}", old_path.display());
             if self.ftp_is_dir(old_path) {
                 if let Some(del_dir) = parent_dir {
                     self.ftp_remove_dir(del_dir)?;
