@@ -1,6 +1,6 @@
 [package]
 name = "neptungen"
-version = "0.10.4"
+version = "0.10.5"
 description = "Yet another static Website Generator"
 repository = "https://github.com/phideg/neptungen"
 readme = "README.md"
@@ -51,7 +51,7 @@ suppaftp = "6"
 term-painter = "0.4"
 tokio = { version = "1.46", features = ["macros", "rt", "rt-multi-thread"] }
 time = { version = "0.3", features = ["local-offset"] }
-toml = "0.8"
+toml = "0.9"
 tower = "0.5"
 tower-http = { version = "0.6.6", features = ["fs", "trace"] }
 walkdir = "2"

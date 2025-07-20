@@ -46,7 +46,7 @@ impl Display for ChecksumsBuilder {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let data = self.data.lock().unwrap();
         for entry in &data.bytes_map {
-            write!(f, "{:?} ", entry.0)?;
+            write!(f, "{} ", entry.0.display())?;
             for &byte in entry.1 {
                 write!(f, "{byte:02x}")?;
             }
@@ -107,7 +107,8 @@ fn build_checksums(start_path: &Path) -> Result<Checksums> {
 fn entry<'scope>(scope: &Scope<'scope>, checksums: &'scope ChecksumsBuilder, path: &Path) {
     let Ok(metadata) = path.symlink_metadata() else {
         checksums.report_error(format!(
-            "sha1sum: Could not read file metadata of {path:#?}"
+            "sha1sum: Could not read file metadata of {}",
+            path.display()
         ));
         return;
     };
@@ -119,10 +120,13 @@ fn entry<'scope>(scope: &Scope<'scope>, checksums: &'scope ChecksumsBuilder, pat
     } else if file_type.is_dir() {
         dir(scope, checksums, path)
     } else {
-        Err(anyhow::anyhow!("File type of {:#?} not supported", path))
+        Err(anyhow::anyhow!(
+            "File type of {} not supported",
+            path.display()
+        ))
     };
     if let Err(error) = result {
-        checksums.report_error(format!("sha1sum: {path:#?}: {error}"));
+        checksums.report_error(format!("sha1sum: {}: {error}", path.display()));
     }
 }
 

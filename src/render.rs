@@ -80,7 +80,7 @@ fn get_and_set_build_timestamp(outdir: &Path) -> SystemTime {
     let f = std::fs::File::create(&build_timestamp_file)
         .expect("Unable to create {build_timestamp_file:?}");
     serde_json::to_writer(f, &now)
-        .unwrap_or_else(|_| panic!("Unable to write data to {build_timestamp_file:?}"));
+        .unwrap_or_else(|_| panic!("Unable to write data to {}", build_timestamp_file.display()));
     last_build
 }
 

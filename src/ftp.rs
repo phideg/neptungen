@@ -48,11 +48,13 @@ impl Operations for Ftp {
                 stream
                     .read_to_end(&mut buf)
                     .map(|_| {
-                        let mut f = File::create(local_path)
-                            .unwrap_or_else(|_| panic!("Couldn't create file '{local_path:?}'."));
+                        let mut f = File::create(local_path).unwrap_or_else(|_| {
+                            panic!("Couldn't create file '{}'.", local_path.display())
+                        });
                         f.write_all(buf.as_slice()).unwrap_or_else(|_| {
                             panic!(
-                                "FTP: file '{remote_file}' could not be written to '{local_path:?}'."
+                                "FTP: file '{remote_file}' could not be written to '{}'.",
+                                local_path.display()
                             )
                         });
                     })
@@ -65,25 +67,25 @@ impl Operations for Ftp {
     fn cwd(&mut self, path: &Path) -> Result<()> {
         self.stream
             .cwd(last_path_comp_as_str!(path)?)
-            .with_context(|| format!("FTP: Couldn't change to dir '{path:?}'"))
+            .with_context(|| format!("FTP: Couldn't change to dir '{}'", path.display()))
     }
 
     fn mkdir(&mut self, path: &Path) -> Result<()> {
         self.stream
             .mkdir(last_path_comp_as_str!(path)?)
-            .with_context(|| format!("FTP: Couldn't create dir '{path:?}'"))
+            .with_context(|| format!("FTP: Couldn't create dir '{}'", path.display()))
     }
 
     fn rmdir(&mut self, path: &Path) -> Result<()> {
         self.stream
             .rmdir(last_path_comp_as_str!(path)?)
-            .with_context(|| format!("FTP: Couldn't remove dir '{path:?}'"))
+            .with_context(|| format!("FTP: Couldn't remove dir '{}'", path.display()))
     }
 
     fn del(&mut self, path: &Path) -> Result<()> {
         self.stream
             .rm(last_path_comp_as_str!(path)?)
-            .with_context(|| format!("FTP: Couldn't remove file '{path:?}'"))
+            .with_context(|| format!("FTP: Couldn't remove file '{}'", path.display()))
     }
 
     fn put(&mut self, path: &Path, local_path: &Path) -> Result<()> {
@@ -140,9 +142,13 @@ impl Operations for Sftp {
         let mut buf = Vec::new();
         file.read_to_end(&mut buf).map(|_| {
             let mut f = File::create(local_path)
-                .unwrap_or_else(|_| panic!("Couldn't create file '{local_path:?}'."));
+                .unwrap_or_else(|_| panic!("Couldn't create file '{}'.", local_path.display()));
             f.write_all(buf.as_slice()).unwrap_or_else(|_| {
-                panic!("SFTP: file '{path:?}' could not be written to '{local_path:?}'.")
+                panic!(
+                    "SFTP: file '{}' could not be written to '{}'.",
+                    path.display(),
+                    local_path.display()
+                )
             });
         })?;
         Ok(())
@@ -153,7 +159,7 @@ impl Operations for Sftp {
         // so we only need to check that the directory exists a cwd operation
         let sftp = self.session.sftp()?;
         sftp.opendir(path)
-            .with_context(|| format!("SFTP: couldn't read '{path:?}'"))
+            .with_context(|| format!("SFTP: couldn't read '{}'", path.display()))
             .map(|_| ())
     }
 
@@ -163,19 +169,19 @@ impl Operations for Sftp {
         // https://www.libssh2.org/libssh2_sftp_mkdir_ex.html
         let sftp = self.session.sftp()?;
         sftp.mkdir(path, 0o755)
-            .with_context(|| format!("SFTP: couldn't create '{path:?}'"))
+            .with_context(|| format!("SFTP: couldn't create '{}'", path.display()))
     }
 
     fn rmdir(&mut self, path: &Path) -> Result<()> {
         let sftp = self.session.sftp()?;
         sftp.rmdir(path)
-            .with_context(|| format!("SFTP: couldn't remove dir '{path:?}'"))
+            .with_context(|| format!("SFTP: couldn't remove dir '{}'", path.display()))
     }
 
     fn del(&mut self, path: &Path) -> Result<()> {
         let sftp = self.session.sftp()?;
         sftp.unlink(path)
-            .with_context(|| format!("SFTP: couldn't remove file '{path:?}'"))
+            .with_context(|| format!("SFTP: couldn't remove file '{}'", path.display()))
     }
 
     fn put(&mut self, path: &Path, local_path: &Path) -> Result<()> {
@@ -183,11 +189,15 @@ impl Operations for Sftp {
         let mut f = File::open(local_path)?;
         let mut remote_file = sftp
             .create(path)
-            .with_context(|| format!("SFTP: Couldn't push file '{path:?}' to server"))?;
+            .with_context(|| format!("SFTP: Couldn't push file '{}' to server", path.display()))?;
         let mut buf = Vec::new();
         f.read_to_end(&mut buf).map(|_| {
             remote_file.write_all(buf.as_slice()).unwrap_or_else(|_| {
-                panic!("SFTP: file '{path:?}' could not be written to '{local_path:?}'.")
+                panic!(
+                    "SFTP: file '{}' could not be written to '{}'.",
+                    path.display(),
+                    local_path.display()
+                )
             });
         })?;
         Ok(())
