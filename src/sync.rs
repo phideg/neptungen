@@ -161,9 +161,15 @@ impl Synchronizer {
                 // entry should not exist on remote but maybe the path still exists
                 // therefore delete file or directory to be sure!
                 if self.ftp_remove_file(new_path).is_ok() {
-                    log::error!("Removed?: {} - maybe changed file into dir?", new_path.display());
+                    log::error!(
+                        "Removed?: {} - maybe changed file into dir?",
+                        new_path.display()
+                    );
                 } else if self.ftp_remove_dir(new_path).is_ok() {
-                    log::error!("Removed?: {} - maybe changed dir to filename?", new_path.display());
+                    log::error!(
+                        "Removed?: {} - maybe changed dir to filename?",
+                        new_path.display()
+                    );
                 }
                 // now we can safely update the remote
                 log::info!("Created: {}", new_path.display());
