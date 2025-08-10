@@ -45,7 +45,7 @@ cd neptungen
 cargo install --path .
 ```
 
-Minimum required stable Rust version is 1.88
+🚨 Minimum required stable Rust version is 1.88!
 
 # Who uses neptungen
 
