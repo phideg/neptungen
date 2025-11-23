@@ -244,8 +244,8 @@ impl Synchronizer {
         let mut parent_dir = src.to_path_buf();
         if !parent_dir.pop() {
             return Err(anyhow!(
-                "Internal error: couldn't handle path {:?}",
-                parent_dir
+                "Internal error: couldn't handle path {}",
+                parent_dir.display()
             ));
         }
         self.ftp_goto_dir(parent_dir.as_path())

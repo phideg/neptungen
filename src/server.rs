@@ -22,6 +22,7 @@ pub async fn serve(conf: &Config) {
     let listener = tokio::net::TcpListener::bind(addr)
         .await
         .expect("Internal error: could not bind http listener port!");
+    println!("listening on http://{}", listener.local_addr().unwrap());
     log::info!("listening on http://{}", listener.local_addr().unwrap());
     axum::serve(listener, app.layer(TraceLayer::new_for_http()))
         .await

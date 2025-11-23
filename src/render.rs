@@ -67,16 +67,17 @@ pub fn build(path: &Path, conf: &Config, clean: bool) -> Result<()> {
 fn get_and_set_build_timestamp(outdir: &Path) -> SystemTime {
     let now = SystemTime::now();
     let build_timestamp_file = outdir.join(BUILD_TIMESTAMP_FILE);
-    let mut last_build = SystemTime::UNIX_EPOCH;
-    if let Ok(f) = std::fs::File::open(&build_timestamp_file)
+    let last_build = if let Ok(f) = std::fs::File::open(&build_timestamp_file)
         && let Ok(build_tstmp) = serde_json::from_reader(f)
     {
         log::info!(
             "Duration since last build {:#?}",
             now.duration_since(build_tstmp).unwrap_or_default()
         );
-        last_build = build_tstmp;
-    }
+        build_tstmp
+    } else {
+        SystemTime::UNIX_EPOCH
+    };
     let f = std::fs::File::create(&build_timestamp_file)
         .expect("Unable to create {build_timestamp_file:?}");
     serde_json::to_writer(f, &now)
@@ -246,9 +247,19 @@ fn prepare_gallery(
     target_path: &Path,
     conf: &Config,
 ) -> Vec<liquid::model::Value> {
-    let gallery_settings = conf.gallery.as_ref().unwrap();
+    let gallery_settings = conf
+        .gallery
+        .as_ref()
+        .expect("Invalid config: expected gallery_settings are missing");
     let mut images = Vec::<liquid::model::Value>::new();
-    let img_dir = gallery_settings.img_dir.as_ref().unwrap();
+    let img_dir = gallery_settings
+        .img_dir
+        .as_ref()
+        .expect("Invalid config: Expected setting img_dir");
+    let img_format = gallery_settings
+        .img_format
+        .as_ref()
+        .expect("Invalid config.toml: Expected setting img_kind");
     let target_dir = target_path.join(img_dir.as_str());
     if let Err(ref err) = DirBuilder::new().recursive(true).create(&target_dir) {
         println!("{err}");
@@ -269,9 +280,9 @@ fn prepare_gallery(
     .collect::<Vec<_>>();
     for entry in entries {
         let entry = entry.unwrap();
-        let mut img = image::open(entry.path()).unwrap_or_else(|_| {
+        let mut img = image::open(entry.path()).unwrap_or_else(|e| {
             panic!(
-                "Resize of '{}' failed: The gallery folder should only contain images!",
+                "Resize of '{}' failed: The gallery folder should only contain images!\n {e}",
                 entry.path().display()
             )
         });
@@ -279,9 +290,9 @@ fn prepare_gallery(
         let mut image_path = PathBuf::from(&target_dir);
         let mut rel_image_path = PathBuf::from(img_dir.as_str());
         image_path.push(entry.file_name());
-        image_path.set_extension("png");
+        image_path.set_extension(img_format.extension());
         rel_image_path.push(entry.file_name());
-        rel_image_path.set_extension("png");
+        rel_image_path.set_extension(img_format.extension());
         if !image_path.exists() {
             let _ = &mut File::create(&image_path).unwrap();
             img = img.resize(
@@ -289,7 +300,7 @@ fn prepare_gallery(
                 gallery_settings.img_height,
                 image::imageops::FilterType::Nearest,
             );
-            img.save_with_format(&image_path, image::ImageFormat::Png)
+            img.save_with_format(&image_path, (*img_format).into())
                 .unwrap_or_else(|_| panic!("Saving image '{}' failed", image_path.display()));
         }
 
@@ -302,7 +313,8 @@ fn prepare_gallery(
                 .map(|s| s.to_str().unwrap())
                 .unwrap(),
         );
-        thumb_file_name.push_str("_thumb.png");
+        thumb_file_name.push_str("_thumb.");
+        thumb_file_name.push_str(img_format.extension());
         thumb_path.push(thumb_file_name.clone());
         rel_thumb_path.push(thumb_file_name);
         if !thumb_path.exists() {
@@ -312,7 +324,7 @@ fn prepare_gallery(
                 gallery_settings.thumb_height,
                 image::imageops::FilterType::Nearest,
             );
-            img.save_with_format(&thumb_path, image::ImageFormat::Png)
+            img.save_with_format(&thumb_path, (*img_format).into())
                 .unwrap_or_else(|_| panic!("Saving thumb image '{}' failed", thumb_path.display()));
         }
 

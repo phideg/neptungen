@@ -17,9 +17,37 @@ pub struct Config {
     pub sync_settings: Option<SyncSettings>,
 }
 
+#[derive(Debug, Clone, Copy, Deserialize)]
+pub enum ImageFormat {
+    Gif,
+    Jpg,
+    Png,
+}
+
+impl ImageFormat {
+    pub(crate) const fn extension(self) -> &'static str {
+        match self {
+            Self::Gif => "gif",
+            Self::Jpg => "jpg",
+            Self::Png => "png",
+        }
+    }
+}
+
+impl From<ImageFormat> for image::ImageFormat {
+    fn from(val: ImageFormat) -> Self {
+        match val {
+            ImageFormat::Jpg => Self::Jpeg,
+            ImageFormat::Png => Self::Png,
+            ImageFormat::Gif => Self::Gif,
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct Gallery {
     pub img_dir: Option<String>,
+    pub img_format: Option<ImageFormat>,
     pub img_width: u32,
     pub img_height: u32,
     pub thumb_width: u32,
@@ -73,13 +101,19 @@ impl Config {
         if self.gallery.is_none() {
             self.gallery = Some(Gallery {
                 img_dir: Some(GALLERY_FOLDER_NAME.to_string()),
+                img_format: Some(ImageFormat::Jpg),
                 img_width: 600,
                 img_height: 800,
                 thumb_width: 90,
                 thumb_height: 90,
             });
-        } else if self.gallery.as_ref().unwrap().img_dir.is_none() {
-            self.gallery.as_mut().unwrap().img_dir = Some(GALLERY_FOLDER_NAME.to_string());
+        } else if let Some(gallery) = self.gallery.as_mut() {
+            if gallery.img_dir.is_none() {
+                gallery.img_dir = Some(GALLERY_FOLDER_NAME.to_string());
+            }
+            if gallery.img_format.is_none() {
+                gallery.img_format = Some(ImageFormat::Jpg);
+            }
         }
         if self.template_dir.is_some() {
             let template_path = base_path.join(self.template_dir.as_ref().unwrap().as_str());
