@@ -177,8 +177,7 @@ impl Config {
                 .map_or(OUTPUT_FOLDER_NAME, String::as_str)
         );
         println!("{}", Bold.paint("SyncSettings"));
-        if self.sync_settings.is_some() {
-            let sync_settings = self.sync_settings.as_ref().unwrap();
+        if let Some(sync_settings) = self.sync_settings.as_ref() {
             println!("  FTP server: {}", sync_settings.ftp_server);
             println!("  FTP port: {}", sync_settings.ftp_port.unwrap_or(21));
             println!("  FTP user: {}", sync_settings.ftp_user);
@@ -187,8 +186,7 @@ impl Config {
                 sync_settings.ftp_overwrite.unwrap_or(false)
             );
         }
-        if self.gallery.is_some() {
-            let gallery = self.gallery.as_ref().unwrap();
+        if let Some(gallery) = self.gallery.as_ref() {
             println!("{}", Bold.paint("Gallery"));
             println!(
                 "  image directory: {}",

@@ -1,10 +1,11 @@
-use crate::config::Config;
+use crate::config::{Config, ImageFormat};
 use crate::filter::{
     contains_markdown_file, contains_markdown_in_dir, contains_markdown_subdir, is_directory,
     is_image, is_modified_markdown, is_not_hidden,
 };
 use crate::template;
 use anyhow::Result;
+use image::{DynamicImage, ImageDecoder, ImageReader};
 use pulldown_cmark::{Options, Parser, html};
 use rayon::prelude::*;
 use regex::Regex;
@@ -242,6 +243,27 @@ fn prepare_site_structure(
     nav_entries
 }
 
+fn resize_image(
+    entry: &DirEntry,
+    img_path: &Path,
+    img_format: ImageFormat,
+    img_width: u32,
+    img_height: u32,
+) -> Result<()> {
+    if !img_path.exists() {
+        let mut img = ImageReader::open(entry.path())?.into_decoder()?;
+        let orientation = img.orientation().ok();
+        let mut resized_img = DynamicImage::from_decoder(img)?;
+        if let Some(orientation) = orientation {
+            resized_img.apply_orientation(orientation);
+        }
+        resized_img
+            .resize(img_width, img_height, image::imageops::FilterType::Nearest)
+            .save_with_format(img_path, (img_format).into())?;
+    }
+    Ok(())
+}
+
 fn prepare_gallery(
     source_entry: &DirEntry,
     target_path: &Path,
@@ -279,33 +301,23 @@ fn prepare_gallery(
     .filter(|e| e.is_ok() && !is_directory(e.as_ref().unwrap()))
     .collect::<Vec<_>>();
     for entry in entries {
-        let entry = entry.unwrap();
-        let mut img = image::open(entry.path()).unwrap_or_else(|e| {
-            panic!(
-                "Resize of '{}' failed: The gallery folder should only contain images!\n {e}",
-                entry.path().display()
-            )
-        });
-
-        let mut image_path = PathBuf::from(&target_dir);
-        let mut rel_image_path = PathBuf::from(img_dir.as_str());
-        image_path.push(entry.file_name());
+        let entry = entry.unwrap_or_else(|e| panic!("Could not read gallery entry! '{e}'"));
+        let mut image_path = target_dir.join(entry.file_name());
         image_path.set_extension(img_format.extension());
-        rel_image_path.push(entry.file_name());
+        let mut rel_image_path = PathBuf::from(img_dir).join(entry.file_name());
         rel_image_path.set_extension(img_format.extension());
-        if !image_path.exists() {
-            let _ = &mut File::create(&image_path).unwrap();
-            img = img.resize(
-                gallery_settings.img_width,
-                gallery_settings.img_height,
-                image::imageops::FilterType::Nearest,
+        if let Err(e) = resize_image(
+            &entry,
+            &image_path,
+            *img_format,
+            gallery_settings.img_width,
+            gallery_settings.img_height,
+        ) {
+            panic!(
+                "Resizing image '{}' failed! (Error: '{e}')",
+                entry.path().display()
             );
-            img.save_with_format(&image_path, (*img_format).into())
-                .unwrap_or_else(|_| panic!("Saving image '{}' failed", image_path.display()));
         }
-
-        let mut thumb_path = PathBuf::from(&target_dir);
-        let mut rel_thumb_path = PathBuf::from(img_dir.as_str());
         let mut thumb_file_name = String::from(
             entry
                 .path()
@@ -313,19 +325,22 @@ fn prepare_gallery(
                 .map(|s| s.to_str().unwrap())
                 .unwrap(),
         );
+        // create the thumbnail
         thumb_file_name.push_str("_thumb.");
         thumb_file_name.push_str(img_format.extension());
-        thumb_path.push(thumb_file_name.clone());
-        rel_thumb_path.push(thumb_file_name);
-        if !thumb_path.exists() {
-            let _ = &mut File::create(&thumb_path).unwrap();
-            img = img.resize(
-                gallery_settings.thumb_width,
-                gallery_settings.thumb_height,
-                image::imageops::FilterType::Nearest,
+        let thumb_path = target_dir.join(&thumb_file_name);
+        let rel_thumb_path = PathBuf::from(img_dir.as_str()).join(&thumb_file_name);
+        if let Err(e) = resize_image(
+            &entry,
+            &thumb_path,
+            *img_format,
+            gallery_settings.img_width,
+            gallery_settings.img_height,
+        ) {
+            panic!(
+                "Creation of thumbnail for '{}' failed: internal error {e}! Please open an issue!",
+                entry.path().display()
             );
-            img.save_with_format(&thumb_path, (*img_format).into())
-                .unwrap_or_else(|_| panic!("Saving thumb image '{}' failed", thumb_path.display()));
         }
 
         let image_entry = liquid::object!({
@@ -358,11 +373,11 @@ fn apply_gallery_template(
     context.insert("root_dir".into(), liquid::model::Value::scalar(root_dir));
     context.insert(
         "title".into(),
-        liquid::model::Value::scalar(if conf.title.is_some() {
-            conf.title.as_ref().unwrap().clone()
-        } else {
-            "None".to_string()
-        }),
+        liquid::model::Value::scalar(
+            conf.title
+                .as_ref()
+                .map_or_else(|| "None".to_string(), String::clone),
+        ),
     );
     context.insert("nav_items".into(), liquid::model::Value::Array(nav_items));
     context.insert(
@@ -397,12 +412,8 @@ fn apply_page_template(
         root_dir.push_str("../");
     }
     let context = liquid::object!({
-       "root_dir" : root_dir,
-       "title" : if conf.title.is_some() {
-            conf.title.as_ref().unwrap().clone()
-        } else {
-            "None".to_string()
-        },
+        "root_dir" : root_dir,
+        "title" : conf.title.as_ref().map_or_else(|| "None".to_string(),String::clone),
         "nav_items" : liquid::model::Value::Array(nav_items),
         "content" : content.to_owned(),
         "page_name" : page_name.to_owned()
