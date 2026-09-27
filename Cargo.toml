@@ -1,6 +1,6 @@
 [package]
 name = "neptungen"
-version = "0.11.2"
+version = "0.11.3"
 description = "Yet another static Website Generator"
 repository = "https://github.com/phideg/neptungen"
 readme = "README.md"
@@ -13,7 +13,7 @@ categories = [
 ]
 authors = ["Philipp Degler <deglerp@googlemail.com>"]
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.98"
 
 [profile.release]
 opt-level = 3
@@ -29,29 +29,29 @@ rpath = false
 name = "neptungen"
 
 [dependencies]
-anyhow = "1.0.100"
-axum = "0.8.8"
-clap = { version = "4.5.54", features = ["derive"] }
+anyhow = "1.0.104"
+axum = "0.8.9"
+clap = { version = "4.6.7", features = ["derive"] }
 liquid = "0.26.11"
-log = "0.4.29"
-image = "0.25.9"
-flexi_logger = "0.31.7"
+log = "0.4.34"
+image = "0.25.10"
+flexi_logger = "0.31.10"
 memmap = "0.7.0"
 portpicker = "0.1.1"
-pulldown-cmark = "0.13.0"
-rayon = "1.11.0"
-regex = "1.12.2"
-rpassword = "7.4.0"
-serde = "1.0.228"
-serde_derive = "1.0.228"
-serde_json = "1.0.148"
-sha1 = "0.10.6"
-ssh2 = "0.9.5"
-suppaftp = "7.0.7"
+pulldown-cmark = "0.13.4"
+rayon = "1.12.0"
+regex = "1.13.1"
+rpassword = "7.5.4"
+serde = "1.0.229"
+serde_derive = "1.0.229"
+serde_json = "1.0.151"
+sha1 = "0.11.0"
+ssh2 = "0.9.6"
+suppaftp = "12.1.0"
 term-painter = "0.4.0"
-tokio = { version = "1.49.0", features = ["macros", "rt", "rt-multi-thread"] }
-time = { version = "0.3.44", features = ["local-offset"] }
-toml = "0.9.10"
-tower = "0.5.2"
-tower-http = { version = "0.6.8", features = ["fs", "trace"] }
+tokio = { version = "1.53.1", features = ["macros", "rt", "rt-multi-thread"] }
+time = { version = "0.3.55", features = ["local-offset"] }
+toml = "1.1.6"
+tower = "0.5.3"
+tower-http = { version = "0.7.1", features = ["fs", "trace"] }
 walkdir = "2.5.0"
