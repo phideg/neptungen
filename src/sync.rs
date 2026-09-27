@@ -68,8 +68,8 @@ impl Synchronizer {
     }
 
     pub fn push_all_files(&mut self) -> Result<()> {
-        println!("Push all files to FTP server {}", &self.server);
-        log::info!("Push all files to FTP server {}", &self.server);
+        println!("Push all files to FTP server {}", self.server);
+        log::info!("Push all files to FTP server {}", self.server);
         let walker = WalkDir::new(self.output_path.as_path())
             .min_depth(1)
             .into_iter();

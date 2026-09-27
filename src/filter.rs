@@ -28,7 +28,7 @@ pub fn is_not_hidden(entry: &DirEntry) -> bool {
 }
 
 pub fn is_directory(entry: &DirEntry) -> bool {
-    entry.metadata().map(|s| s.is_dir()).unwrap_or(false)
+    entry.metadata().is_ok_and(|s| s.is_dir())
 }
 
 pub fn is_image(entry: &DirEntry) -> bool {

@@ -120,7 +120,7 @@ impl Config {
             assert!(
                 template_path.exists(),
                 "The template directory '{}' does not exist in your project '{}'",
-                &self.template_dir.as_ref().unwrap().as_str(),
+                self.template_dir.as_ref().unwrap().as_str(),
                 base_path.display()
             );
             self.template_dir = Some(
