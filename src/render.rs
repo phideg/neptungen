@@ -334,8 +334,8 @@ fn prepare_gallery(
             &entry,
             &thumb_path,
             *img_format,
-            gallery_settings.img_width,
-            gallery_settings.img_height,
+            gallery_settings.thumb_width,
+            gallery_settings.thumb_height,
         ) {
             panic!(
                 "Creation of thumbnail for '{}' failed: internal error {e}! Please open an issue!",
